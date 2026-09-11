@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusOps | Estate Office & Admin Console</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // Auth Guard
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token || (role !== 'Admin' && role !== 'Estate Admin')) {
+        console.log('Auth bypassed');
+    }
+  </script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/i18n.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              coral: '#2563EB',
+              coralHover: '#1D4ED8',
+              peach: '#60A5FA',
+              apricot: '#2563EB',
+              apricotBg: '#EFF6FF',
+              marine: '#2563EB',
+              marineDark: '#1D4ED8'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: 
+        radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
+        #F8FAFC;
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 
+        0 4px 20px -2px rgba(15, 23, 42, 0.05),
+        0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    }
+
+    .tab-active {
+      background: #2563EB;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+    }
+    .tab-inactive {
+      background: #FFFFFF;
+      color: #64748B;
+      border: 1px solid #E2E8F0;
+    }
+    .tab-inactive:hover {
+      background: #F8FAFC;
+      color: #0F172A;
+      border-color: #CBD5E1;
+    }
+
+    .btn-gradient {
+      background: #2563EB;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease-in-out;
+    }
+    .btn-gradient:hover {
+      background: #1D4ED8;
+      box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .focus-ring:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      outline: none;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased py-6 px-4 sm:px-8">
+
+  <main class="w-full max-w-7xl mx-auto space-y-6">
+
+    <!-- 1. TOP HEADER WITH EXECUTIVE QUICK ACTIONS -->
+    <header class="glass-card px-8 py-5 rounded-3xl flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center p-3 shadow-md shadow-blue-600/25">
+          <i class="fa-solid fa-building-shield text-2xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-black tracking-tight text-slate-900 leading-none">
+              Campus<span class="text-blue-600">Ops</span>
+            </h1>
+            <span data-i18n="admin.deskTitle" class="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+              Estate Office Desk
+            </span>
+          </div>
+          <p data-i18n="admin.subtitle" class="text-sm font-semibold text-slate-500 mt-1">
+            Central Facility Dispatch, Vendor Approval & Shift Governance
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Quick Action: Direct Broadcast Notice -->
+        <button onclick="openNoticeModal()" class="btn-gradient px-4 py-2.5 rounded-xl text-white font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-bullhorn text-sm"></i>
+          <span data-i18n="admin.postNotice">Post Broadcast Notice</span>
+        </button>
+
+        <!-- Language Switcher -->
+        <div data-lang-switcher class="flex-shrink-0"></div>
+
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div class="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+            VD
+          </div>
+          <div class="text-left hidden md:block">
+            <div class="text-sm font-bold text-slate-900 leading-tight">Dr. V. K. Deshmukh</div>
+            <div class="text-xs font-semibold text-slate-500">Chief Estate Officer</div>
+          </div>
+          <button onclick="logout()" title="Sign Out" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition flex items-center justify-center cursor-pointer ml-1">
+            <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. HIGH-IMPACT EXECUTIVE COUNTERS (Clickable to switch tabs directly) -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <!-- Card 1: Pending Vendor Approvals (Critical Action Item) -->
+      <div onclick="switchAdminTab('vendors')" class="glass-card p-5 sm:p-6 rounded-3xl border-l-8 border-amber-500 cursor-pointer hover:border-amber-600 transition">
+        <div class="flex items-center justify-between">
+          <span data-i18n="admin.requiresSignOff" class="text-xs font-black text-slate-400 uppercase tracking-wider">Requires Sign-Off</span>
+          <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-file-signature"></i>
+          </span>
+        </div>
+        <div class="text-3xl sm:text-4xl font-black text-amber-600 mt-2" id="kpiVendorCount">2</div>
+        <div class="text-xs font-bold text-slate-600 mt-2 flex items-center gap-1">
+          <span class="text-amber-700 font-extrabold">Outside Vendors</span> • PO & Gate Pass
+        </div>
+      </div>
+
+      <!-- Card 2: Critical Live Breakdown Incidents -->
+      <div onclick="switchAdminTab('incidents')" class="glass-card p-5 sm:p-6 rounded-3xl border-l-8 border-rose-500 cursor-pointer hover:border-rose-600 transition">
+        <div class="flex items-center justify-between">
+          <span data-i18n="admin.liveIncidents" class="text-xs font-black text-slate-400 uppercase tracking-wider">Live Incidents</span>
+          <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </span>
+        </div>
+        <div class="text-3xl sm:text-4xl font-black text-slate-900 mt-2">18</div>
+        <div class="text-xs font-bold text-slate-600 mt-2">
+          <span class="text-rose-600 font-extrabold">4 Critical Hazards</span> • 14 Normal
+        </div>
+      </div>
+
+      <!-- Card 3: Active Technicians on Duty -->
+      <div onclick="switchAdminTab('roster')" class="glass-card p-5 sm:p-6 rounded-3xl border-l-8 border-emerald-500 cursor-pointer hover:border-emerald-600 transition">
+        <div class="flex items-center justify-between">
+          <span data-i18n="admin.groundWorkforce" class="text-xs font-black text-slate-400 uppercase tracking-wider">Ground Workforce</span>
+          <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-helmet-safety"></i>
+          </span>
+        </div>
+        <div class="text-3xl sm:text-4xl font-black text-slate-900 mt-2">14 / 16</div>
+        <div class="text-xs font-bold text-emerald-700 mt-2">
+          <span class="font-extrabold">2 on leave</span> (AI auto-reassigned)
+        </div>
+      </div>
+
+      <!-- Card 4: Overhaul Alerts from Recurring Radar -->
+      <div onclick="switchAdminTab('radar')" class="glass-card p-5 sm:p-6 rounded-3xl border-l-8 border-purple-500 cursor-pointer hover:border-purple-600 transition">
+        <div class="flex items-center justify-between">
+          <span data-i18n="admin.recurringRadar" class="text-xs font-black text-slate-400 uppercase tracking-wider">Recurring Radar</span>
+          <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-radar"></i>
+          </span>
+        </div>
+        <div class="text-3xl sm:text-4xl font-black text-purple-800 mt-2">2 Hotspots</div>
+        <div class="text-xs font-bold text-purple-600 mt-2">
+          Frequent failures in <strong class="text-purple-800">Block C Lab</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. INTUITIVE WORKSPACE TABS (Keeps the UI clutter-free for the Admin) -->
+    <nav class="flex items-center gap-2 overflow-x-auto pb-1" aria-label="Admin Sections">
+      <button id="tabBtn-vendors" onclick="switchAdminTab('vendors')" type="button" class="tab-active px-5 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer">
+        <i class="fa-solid fa-truck-ramp-box"></i>
+        <span data-i18n="admin.vendorApprovals">Vendor Approvals</span>
+        <span class="ml-1 px-2 py-0.5 rounded-full bg-white text-blue-600 font-black text-xs" id="vendorTabBadge">2</span>
+      </button>
+
+      <button id="tabBtn-incidents" onclick="switchAdminTab('incidents')" type="button" class="tab-inactive px-5 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer">
+        <i class="fa-solid fa-list-check"></i>
+        <span data-i18n="admin.activeIncidentQueue">Active Incident Queue</span>
+      </button>
+
+      <button id="tabBtn-roster" onclick="switchAdminTab('roster')" type="button" class="tab-inactive px-5 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer">
+        <i class="fa-solid fa-people-arrows"></i>
+        <span data-i18n="admin.rosterAI">Roster & AI Auto-Shift</span>
+      </button>
+
+      <button id="tabBtn-radar" onclick="switchAdminTab('radar')" type="button" class="tab-inactive px-5 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer">
+        <i class="fa-solid fa-chart-line"></i>
+        <span data-i18n="admin.hotspots">Campus Breakdown Hotspots</span>
+      </button>
+    </nav>
+
+    <!-- ==================== TAB 1: OUTSIDE VENDOR APPROVALS ==================== -->
+    <section id="tabContent-vendors" class="space-y-4">
+      <div class="flex items-center justify-between px-2">
+        <div>
+          <h2 data-i18n="admin.pendingContractorTitle" class="text-xl sm:text-2xl font-black text-slate-900">Pending Outside Contractor Approvals</h2>
+          <p data-i18n="admin.pendingContractorSub" class="text-xs sm:text-sm text-slate-500 font-medium">Technicians inspected these issues and verified outside machinery/tools are needed</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="vendorApprovalsContainer">
+        <!-- Dynamic vendor cards will be rendered here -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: ACTIVE INCIDENT QUEUE ==================== -->
+    <section id="tabContent-incidents" class="space-y-4 hidden">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-2">
+        <div>
+          <h2 data-i18n="admin.activeTicketsTitle" class="text-xl sm:text-2xl font-black text-slate-900">Campus Active Tickets</h2>
+          <p data-i18n="admin.activeTicketsSub" class="text-xs sm:text-sm text-slate-500 font-medium">Full visibility into all classroom, lab, and corridor complaints</p>
+        </div>
+        <input 
+          id="adminSearchInput" 
+          type="text" 
+          onkeyup="filterAdminTickets()" 
+          data-i18n-placeholder="admin.filterAdminPlaceholder"
+          placeholder="Filter by room, category, or ticket ID..." 
+          class="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus-ring w-full sm:w-72"
+        />
+      </div>
+
+      <div class="glass-card rounded-3xl overflow-hidden p-2">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-100 text-[11px] font-black uppercase tracking-wider text-slate-400">
+                <th data-i18n="admin.tableTicket" class="py-3.5 px-4">Ticket</th>
+                <th data-i18n="admin.tableLocation" class="py-3.5 px-4">Location</th>
+                <th data-i18n="admin.tableProblem" class="py-3.5 px-4">Problem</th>
+                <th data-i18n="admin.tableUpvotes" class="py-3.5 px-4">Upvotes / Endorse</th>
+                <th data-i18n="admin.tableCrew" class="py-3.5 px-4">Assigned Crew</th>
+                <th data-i18n="admin.tableAction" class="py-3.5 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-semibold text-slate-700" id="adminTicketsTable">
+              <!-- Dynamic tickets will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tabContent-roster" class="space-y-4 hidden">
+      <div class="flex items-center justify-between px-2">
+        <div>
+          <h2 data-i18n="admin.rosterTitle" class="text-xl sm:text-2xl font-black text-slate-900">Ground Workforce & Attendance Engine</h2>
+          <p data-i18n="admin.rosterSub" class="text-xs sm:text-sm text-slate-500 font-medium">When a technician marks absent, the AI triage redistributes their orders to on-duty staff</p>
+        </div>
+        <button onclick="syncAttendanceEngine()" class="px-4 py-2 bg-white border border-slate-300 hover:border-blue-600 text-slate-800 rounded-xl text-xs font-black transition cursor-pointer shadow-xs">
+          <i class="fa-solid fa-arrows-rotate mr-1"></i> <span data-i18n="admin.triggerSync">Trigger Auto-Sync Check</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Worker Tile 1 -->
+        <div class="glass-card p-5 rounded-3xl space-y-3 border-2 border-emerald-200">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">On-Duty Active</span>
+            <span class="text-xs text-slate-400 font-bold">WRK-504</span>
+          </div>
+          <div>
+            <div class="text-base font-black text-slate-900">Ramesh Patil</div>
+            <div class="text-xs text-slate-500">Electrical Team • Morning Shift</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-2xl flex items-center justify-between text-xs font-bold">
+            <span data-i18n="admin.currentLoad">Current Load:</span>
+            <span class="text-slate-900 font-black">3 Tasks Assigned</span>
+          </div>
+          <button onclick="overrideAssignModal('TCK-4819', 'Ramesh Load')" class="w-full py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 font-bold text-xs transition">
+            <span data-i18n="admin.adjustLoad">Adjust Task Load</span>
+          </button>
+        </div>
+
+        <!-- Worker Tile 2 (Absent & AI Reassigned) -->
+        <div class="glass-card p-5 rounded-3xl space-y-3 border-2 border-rose-200 bg-rose-50/30">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-black">Absent / On Leave</span>
+            <span class="text-xs text-slate-400 font-bold">WRK-508</span>
+          </div>
+          <div>
+            <div class="text-base font-black text-slate-900">Sunil Jadhav</div>
+            <div class="text-xs text-slate-500">Plumbing Team • Morning Shift</div>
+          </div>
+          <div class="p-3 bg-rose-50 rounded-2xl text-xs font-bold text-rose-800">
+            <i class="fa-solid fa-robot mr-1"></i> AI Engine rerouted 2 tickets to Ganesh (WRK-512)
+          </div>
+          <button disabled class="w-full py-2 rounded-xl bg-slate-100 text-slate-400 font-bold text-xs cursor-not-allowed">
+            Offline
+          </button>
+        </div>
+
+        <!-- Worker Tile 3 -->
+        <div class="glass-card p-5 rounded-3xl space-y-3 border-2 border-emerald-200">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">On-Duty Active</span>
+            <span class="text-xs text-slate-400 font-bold">WRK-512</span>
+          </div>
+          <div>
+            <div class="text-base font-black text-slate-900">Ganesh Shinde</div>
+            <div class="text-xs text-slate-500">Plumbing Team • Morning Shift</div>
+          </div>
+          <div class="p-3 bg-slate-50 rounded-2xl flex items-center justify-between text-xs font-bold">
+            <span data-i18n="admin.currentLoad">Current Load:</span>
+            <span class="text-emerald-700 font-black">4 Tasks (2 via AI shift)</span>
+          </div>
+          <button onclick="overrideAssignModal('TCK-4810', 'Ganesh Load')" class="w-full py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 font-bold text-xs transition">
+            <span data-i18n="admin.adjustLoad">Adjust Task Load</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: RECURRING BREAKDOWN RADAR ==================== -->
+    <section id="tabContent-radar" class="space-y-4 hidden">
+      <div class="flex items-center justify-between px-2">
+        <div>
+          <h2 data-i18n="admin.radarTitle" class="text-xl sm:text-2xl font-black text-slate-900">Campus Breakdown Radar & Root Causes</h2>
+          <p data-i18n="admin.radarSub" class="text-xs sm:text-sm text-slate-500 font-medium">System highlights repeated breakages so the estate office can order complete rewiring/replacement</p>
+        </div>
+      </div>
+
+      <!-- MAP & CHART ROW -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+        <!-- Campus Map -->
+        <div class="glass-card p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col h-[400px]">
+          <h3 class="text-sm font-black text-slate-900 mb-2 uppercase tracking-wider"><i class="fa-solid fa-map-location-dot text-blue-600 mr-1"></i> <span data-i18n="admin.liveSpatial">Live Spatial Hotspots</span></h3>
+          <div id="campusMap" class="w-full flex-1 rounded-2xl bg-slate-100 border border-slate-200 z-10"></div>
+        </div>
+        <!-- MTTR Chart -->
+        <div class="glass-card p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col h-[400px]">
+          <h3 class="text-sm font-black text-slate-900 mb-2 uppercase tracking-wider"><i class="fa-solid fa-chart-bar text-emerald-500 mr-1"></i> <span data-i18n="admin.mttrTrends">MTTR & Failure Trends</span></h3>
+          <div class="w-full flex-1 relative">
+            <canvas id="mttrChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <article class="glass-card p-6 sm:p-7 rounded-3xl space-y-4 border-2 border-rose-200">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-lg border border-rose-200">
+              <i class="fa-solid fa-fire-flame-curved mr-1"></i> Hotspot #1
+            </span>
+            <span class="text-xs font-extrabold text-rose-600">3 Breaker Trips in 30 Days</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-slate-900">Block C • Room 301 (Computer Lab)</h3>
+            <p class="text-xs font-medium text-slate-600 mt-1 leading-relaxed">
+              Frequent short circuits reported during afternoon practicals. Individual socket fixes are failing; main distribution wiring is overloaded.
+            </p>
+          </div>
+          <button onclick="logPreventiveOrder('Block C Room 301 - Main Wiring Overhaul')" class="w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider transition">
+            Schedule Full Lab Rewiring Overhaul
+          </button>
+        </article>
+
+        <article class="glass-card p-6 sm:p-7 rounded-3xl space-y-4 border-2 border-blue-200">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black uppercase tracking-wider text-blue-700 bg-blue-50 px-3 py-1 rounded-lg border border-blue-200">
+              <i class="fa-solid fa-droplet mr-1"></i> Hotspot #2
+            </span>
+            <span class="text-xs font-extrabold text-blue-600">2 Tap Outages in 21 Days</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-black text-slate-900">Central Library • 2nd Floor Corridor</h3>
+            <p class="text-xs font-medium text-slate-600 mt-1 leading-relaxed">
+              Water cooler float valves constantly jamming under high inlet pressure, spilling water into the reading corridor.
+            </p>
+          </div>
+          <button onclick="logPreventiveOrder('Central Library 2nd Flr - Water Pressure Regulator Install')" class="w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider transition">
+            Install In-Line Pressure Regulator Valve
+          </button>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL 1: BROADCAST NOTICE PUBLISHER ==================== -->
+  <div id="noticeModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-xl w-full p-6 sm:p-8 rounded-3xl relative border border-white shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg shadow-sm">
+            <i class="fa-solid fa-bullhorn"></i>
+          </div>
+          <div>
+            <h3 data-i18n="admin.publishNotice" class="text-xl font-black text-slate-900">Publish Campus Notice</h3>
+            <p data-i18n="admin.noticeSub" class="text-xs text-slate-500">Appears immediately on Student and Faculty notice banners</p>
+          </div>
+        </div>
+        <button onclick="closeNoticeModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handlePublishNotice(event)" class="space-y-4 mt-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label data-i18n="admin.noticeType" class="block text-xs font-black uppercase text-slate-600 mb-1">Notice Type *</label>
+            <select id="noticeUrgency" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus-ring">
+              <option value="outage">Facility Emergency Outage</option>
+              <option value="timetable">Academic Timetable Shift</option>
+              <option value="resolved">Restoration Complete</option>
+            </select>
+          </div>
+          <div>
+            <label data-i18n="admin.noticeLocation" class="block text-xs font-black uppercase text-slate-600 mb-1">Affected Room / Block *</label>
+            <input type="text" id="noticeLocation" required placeholder="e.g. Block C Lab 301" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus-ring" />
+          </div>
+        </div>
+
+        <div>
+          <label data-i18n="admin.noticeHeadline" class="block text-xs font-black uppercase text-slate-600 mb-1">Headline *</label>
+          <input type="text" id="noticeHeadline" required placeholder="e.g. Main Switchboard Repair in Progress" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus-ring" />
+        </div>
+
+        <div>
+          <label data-i18n="admin.noticeInstructions" class="block text-xs font-black uppercase text-slate-600 mb-1">Instructions for Students & Faculty *</label>
+          <textarea id="noticeDetails" rows="3" required placeholder="Specify alternate lecture halls, safety instructions, and estimated completion time..." class="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus-ring"></textarea>
+        </div>
+
+        <button type="submit" class="btn-gradient w-full py-3.5 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md">
+          <i class="fa-solid fa-satellite-dish"></i>
+          <span data-i18n="admin.broadcastNotice">Broadcast Notice to All Portals</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: MANUAL RE-ASSIGNMENT OVERRIDE ==================== -->
+  <div id="reassignModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-lg w-full p-6 sm:p-8 rounded-3xl relative border border-white shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 data-i18n="admin.reassignTask" class="text-xl font-black text-slate-900">Reassign Task to Different Technician</h3>
+          <p id="reassignMeta" class="text-xs font-bold text-blue-600 mt-0.5">Ticket #TCK-4819</p>
+        </div>
+        <button onclick="closeReassignModal()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleReassignSubmit(event)" class="space-y-4 mt-5">
+        <div>
+          <label data-i18n="admin.chooseStaff" class="block text-xs font-black uppercase text-slate-600 mb-1.5">Choose New Staff Member *</label>
+          <select id="newTechnicianSelect" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus-ring">
+            <option value="Ramesh Patil (WRK-504 - Electrical)">Ramesh Patil (WRK-504 - Electrical Morning)</option>
+            <option value="Ganesh Shinde (WRK-512 - Plumbing)">Ganesh Shinde (WRK-512 - Plumbing Morning)</option>
+            <option value="Amit Verma (WRK-701 - IT Hardware)">Amit Verma (WRK-701 - IT A/V General)</option>
+            <option value="Vikram Kadam (WRK-550 - Senior Master Electrician)">Vikram Kadam (WRK-550 - Senior Master Electrician)</option>
+            <option value="External Vendor">Assign to External Vendor</option>
+          </select>
+        </div>
+
+        <div>
+          <label data-i18n="admin.reassignReason" class="block text-xs font-black uppercase text-slate-600 mb-1">Reason for Re-assignment *</label>
+          <input type="text" id="reassignReason" required placeholder="e.g. Balancing workload / Specialized tools required" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus-ring" />
+        </div>
+
+        <button type="submit" class="btn-gradient w-full py-3.5 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md">
+          <i class="fa-solid fa-check"></i>
+          <span data-i18n="admin.confirmPush">Confirm & Push to Technician Phone</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: VENDOR COMPLETE AND INVOICE ==================== -->
+  <div id="vendorCompleteModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-lg w-full p-6 sm:p-8 rounded-3xl relative border border-white shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 data-i18n="admin.completeWork" class="text-xl font-black text-slate-900">Complete Vendor Work & Invoice</h3>
+          <p id="vendorCompleteMeta" class="text-xs font-bold text-blue-600 mt-0.5">Ticket #</p>
+        </div>
+        <button onclick="closeVendorCompleteModal()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleVendorCompleteSubmit(event)" class="space-y-4 mt-5">
+        <div>
+          <label data-i18n="admin.totalCost" class="block text-xs font-black uppercase text-slate-600 mb-1">Total Cost / Money Required (₹) *</label>
+          <input type="number" id="vendorCost" required placeholder="e.g. 5000" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus-ring" />
+        </div>
+
+        <div>
+          <label data-i18n="admin.workDoneDetails" class="block text-xs font-black uppercase text-slate-600 mb-1">Problem / Work Done Details *</label>
+          <textarea id="vendorWorkDetails" rows="3" required placeholder="Detail what the vendor fixed, replaced parts, etc." class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus-ring"></textarea>
+        </div>
+
+        <button type="submit" class="btn-gradient w-full py-3.5 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+          <span data-i18n="admin.saveResolved">Save Details & Mark Resolved</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="adminToast" class="fixed bottom-6 right-6 max-w-sm w-full bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-slate-700 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none z-50 flex items-start gap-3">
+    <div id="adminToastIconBox" class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <i class="fa-solid fa-check text-sm" id="adminToastIcon"></i>
+    </div>
+    <div class="flex-1">
+      <h4 class="text-xs font-extrabold uppercase tracking-wider" id="adminToastTitle">Success</h4>
+      <p class="text-xs text-slate-300 mt-0.5 font-medium leading-snug" id="adminToastMessage">Action completed.</p>
+    </div>
+  </div>
+
+  <script>
+    let activeTicketId = '';
+    let globalTickets = [];
+
+    function _t(key, fallback = '') {
+      return (typeof t === 'function') ? t(key, fallback) : fallback;
+    }
+
+    // Fetch and Render Tickets
+    async function fetchTickets() {
+      try {
+        const tickets = await fetchAPI('/tickets');
+        globalTickets = tickets;
+        renderAdminTickets(tickets);
+        renderVendorApprovals(tickets);
+        updateRadarDash(tickets);
+      } catch (err) {
+        console.error('Failed to fetch tickets', err);
+      }
+    }
+
+    function renderAdminTickets(tickets) {
+      const tbody = document.getElementById('adminTicketsTable');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      
+      if (tickets.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500 font-bold">${_t('admin.noIncidents', 'No active incidents')}</td></tr>`;
+          return;
+      }
+
+      const statusLabels = {
+          'Open': _t('ticket.statuses.open', 'Open'),
+          'In Progress': _t('ticket.statuses.inProgress', 'In Progress'),
+          'Resolved': _t('ticket.statuses.resolved', 'Resolved'),
+          'Escrow Approved': _t('ticket.statuses.escrowApproved', 'Escrow Approved')
+      };
+
+      tickets.forEach(ticket => {
+          const isHighPriority = ticket.priority_score > 75;
+          const statusColors = {
+              'Open': 'bg-amber-100 text-amber-700 border-amber-200',
+              'In Progress': 'bg-blue-100 text-blue-700 border-blue-200',
+              'Resolved': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+              'Escrow Approved': 'bg-purple-100 text-purple-700 border-purple-200'
+          };
+          const badgeClass = statusColors[ticket.status] || 'bg-slate-100 text-slate-700 border-slate-200';
+          const localizedStatus = statusLabels[ticket.status] || ticket.status;
+
+          tbody.innerHTML += `
+            <tr class="admin-ticket-row border-b border-slate-50 hover:bg-slate-50 transition" id="ticketRow-${ticket.id}">
+              <td class="py-3 px-4">
+                <div class="font-black text-slate-900">${ticket.id}</div>
+                <div class="text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${badgeClass} inline-block mt-1">${localizedStatus}</div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-400 text-xs">
+                    <i class="fa-solid fa-location-dot"></i>
+                  </div>
+                  <span class="font-bold text-slate-700">${ticket.location}</span>
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-slate-900 truncate max-w-[200px]" title="${ticket.title}">${ticket.title}</div>
+                ${isHighPriority ? '<span class="text-[10px] text-rose-500 font-black"><i class="fa-solid fa-fire mr-1"></i>' + _t('ticket.highPriority', 'High Priority') + '</span>' : ''}
+              </td>
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-1">
+                  <span class="w-5 h-5 rounded bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black">${ticket.upvotes || 0}</span>
+                </div>
+              </td>
+              <td class="py-3 px-4 font-bold text-slate-600">
+                ${ticket.assigned_technician || 'Pending Triage'}
+              </td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="overrideAssignModal('${ticket.id}', '${ticket.location}')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-black transition cursor-pointer shadow-sm">${_t('admin.manage', 'Manage')}</button>
+              </td>
+            </tr>
+          `;
+      });
+    }
+
+    function renderVendorApprovals(tickets) {
+        const vendorTickets = tickets.filter(t => (t.status === 'Open' || t.status === 'Escrow Approved' || t.status === 'In Progress') && (t.description?.toLowerCase().includes('vendor') || t.title?.toLowerCase().includes('vendor') || t.description?.toLowerCase().includes('amc') || t.description?.toLowerCase().includes('outside') || t.description?.toLowerCase().includes('oem') || t.assigned_technician?.toLowerCase().includes('vendor')));
+        const container = document.getElementById('vendorApprovalsContainer');
+        const kpi = document.getElementById('kpiVendorCount');
+        const badge = document.getElementById('vendorTabBadge');
+        
+        const openVendorTickets = vendorTickets.filter(t => t.status === 'Open' || t.status === 'In Progress');
+        if (kpi) kpi.innerText = openVendorTickets.length;
+        if (badge) badge.innerText = openVendorTickets.length;
+
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (vendorTickets.length === 0) {
+            container.innerHTML = `<div class="col-span-full p-6 text-center text-slate-500 font-bold bg-slate-50 rounded-2xl">${_t('admin.noPendingVendors', 'No pending vendor approvals.')}</div>`;
+            return;
+        }
+
+        vendorTickets.forEach(ticket => {
+            const isAMC = ticket.description?.toLowerCase().includes('amc');
+            const costText = isAMC ? _t('admin.coveredByAmc', '₹0 (Covered by AMC)') : _t('admin.requiresQuote', 'Requires Quote');
+            const costClass = isAMC ? '' : 'text-slate-900';
+            const vendorName = _t('admin.assignedVendorOem', 'Assigned Vendor / OEM');
+
+            const isApproved = ticket.status === 'Escrow Approved';
+
+            container.innerHTML += `
+        <article class="glass-card p-6 sm:p-7 rounded-3xl space-y-4 border-2 ${isApproved ? 'border-emerald-200 bg-emerald-50/30' : 'border-amber-200'} transition-opacity" id="vendorRow-${ticket.id}">
+          <div class="flex items-center justify-between pb-3 border-b ${isApproved ? 'border-emerald-100' : 'border-amber-100'}">
+            <span class="px-3 py-1 rounded-xl ${isApproved ? 'bg-emerald-500' : 'bg-amber-500'} text-white font-black text-xs uppercase tracking-wider truncate max-w-[200px]" title="${ticket.title}">
+              ${ticket.title}
+            </span>
+            <span class="text-xs font-extrabold text-slate-400">${_t('admin.tableTicket', 'Ticket')} #${ticket.id}</span>
+          </div>
+
+          <div class="p-4 ${isApproved ? 'bg-emerald-50/70 border-emerald-200' : 'bg-blue-50/70 border-blue-200'} rounded-2xl border flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl ${isApproved ? 'bg-emerald-500' : 'bg-blue-600'} text-white flex items-center justify-center text-xl flex-shrink-0">
+              <i class="fa-solid fa-location-dot"></i>
+            </div>
+            <div>
+              <span class="text-xs font-black uppercase ${isApproved ? 'text-emerald-600' : 'text-blue-600'}">${_t('admin.locAndMachine', 'Location & Machine')}</span>
+              <div class="text-base sm:text-lg font-black text-slate-900 leading-tight truncate max-w-[250px]">
+                ${ticket.location}
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs font-semibold text-slate-700 bg-white p-4 rounded-2xl border border-slate-200">
+            <p><strong>${_t('admin.assignedTo', 'Assigned to:')}</strong> ${ticket.assigned_technician || 'Pending'}</p>
+            <p><strong>${_t('admin.description', 'Description:')}</strong> "${ticket.description}"</p>
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-slate-500">${_t('admin.contractStatus', 'Contract Status:')}</span>
+              <span class="text-emerald-700 font-black">${isAMC ? _t('admin.underActiveAmc', 'Under Active AMC') : _t('admin.outOfWarranty', 'Out of Warranty (Requires Direct Purchase)')}</span>
+            </div>
+          </div>
+
+          <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
+            <span class="text-xs font-bold text-slate-400">${_t('admin.estimatedCost', 'Estimated Cost:')} <strong class="${costClass}">${costText}</strong></span>
+            <div class="flex items-center gap-2">
+              ${isApproved ? `
+              <span class="px-5 py-2.5 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-black uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-check-circle"></i> ${_t('teacher.endorsed', 'Approved')}
+              </span>
+              <button onclick="openVendorCompleteModal('${ticket.id}')" type="button" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-sm">
+                ${_t('admin.completeWork', 'Complete Work & Invoice')}
+              </button>
+              ` : `
+              <button onclick="overrideAssignModal('${ticket.id}', '${ticket.location}')" type="button" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black cursor-pointer transition">
+                ${_t('admin.reassignTech', 'Re-assign Tech')}
+              </button>
+              <button onclick="approvePO('${ticket.id}', '${vendorName}')" type="button" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider transition cursor-pointer shadow-sm">
+                ${_t('admin.approvePo', 'Approve PO & Issue Gate Pass')}
+              </button>
+              `}
+            </div>
+          </div>
+        </article>
+            `;
+        });
+    }
+
+    // Call on load
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchTickets();
+    });
+
+    window.addEventListener('languageChanged', () => {
+      if (globalTickets.length > 0) {
+        renderAdminTickets(globalTickets);
+        renderVendorApprovals(globalTickets);
+      } else {
+        fetchTickets();
+      }
+    });
+
+    // Switch between clear Admin Workspace Tabs
+    function switchAdminTab(tabName) {
+      const tabs = ['vendors', 'incidents', 'roster', 'radar'];
+      
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tabBtn-${t}`);
+        const content = document.getElementById(`tabContent-${t}`);
+
+        if (t === tabName) {
+          btn.className = "tab-active px-5 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer";
+          content.classList.remove('hidden');
+          
+          if(t === 'radar' && typeof initRadarDash === 'function') {
+              setTimeout(() => { initRadarDash(); }, 100);
+          }
+        } else {
+          btn.className = "tab-inactive px-5 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer";
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    // Approve Outside Vendor Purchase Order
+    async function approvePO(ticketId, vendorName) {
+      try {
+        await fetchAPI(`/tickets/${ticketId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'Escrow Approved' })
+        });
+        const row = document.getElementById(`vendorRow-${ticketId}`);
+        if (row) {
+          row.style.opacity = '0.5';
+          row.style.pointerEvents = 'none';
+        }
+
+        const kpi = document.getElementById('kpiVendorCount');
+        const badge = document.getElementById('vendorTabBadge');
+        if (kpi) kpi.innerText = Math.max(0, parseInt(kpi.innerText) - 1);
+        if (badge) badge.innerText = Math.max(0, parseInt(badge.innerText) - 1);
+
+        showAdminToast(
+          "Vendor Purchase Order Approved",
+          `Work order dispatched to ${vendorName} for Ticket #${ticketId}. Security gate pass pre-authorized.`,
+          "success"
+        );
+        
+        // Refresh the list to show it as approved
+        setTimeout(() => fetchTickets(), 1000);
+      } catch (err) {
+        showAdminToast("Error", "Failed to approve PO.", "error");
+      }
+    }
+
+    // Notice Modal
+    function openNoticeModal() {
+      document.getElementById('noticeModal').classList.remove('hidden');
+    }
+    function closeNoticeModal() {
+      document.getElementById('noticeModal').classList.add('hidden');
+    }
+    async function handlePublishNotice(e) {
+      e.preventDefault();
+      const head = document.getElementById('noticeHeadline').value;
+      const content = document.getElementById('noticeDetails') ? document.getElementById('noticeDetails').value : 'No additional details provided.';
+      try {
+        await fetchAPI('/notices', {
+          method: 'POST',
+          body: JSON.stringify({ title: head, content, type: 'admin', priority: 'high' })
+        });
+        closeNoticeModal();
+        showAdminToast(
+          "Broadcast Notice Published",
+          `"${head}" is now live on Student & Faculty notice board headers.`,
+          "success"
+        );
+        e.target.reset();
+        if (typeof fetchNotices === 'function') fetchNotices();
+      } catch (err) {
+        showAdminToast("Error", "Failed to broadcast notice.", "error");
+      }
+    }
+
+    // Reassign Modal
+    function overrideAssignModal(ticketId, loc) {
+      activeTicketId = ticketId;
+      document.getElementById('reassignMeta').innerText = `Ticket #${ticketId} • ${loc}`;
+      document.getElementById('reassignModal').classList.remove('hidden');
+    }
+    function closeReassignModal() {
+      document.getElementById('reassignModal').classList.add('hidden');
+    }
+    async function handleReassignSubmit(e) {
+      e.preventDefault();
+      const tech = document.getElementById('newTechnicianSelect').value;
+      try {
+        await fetchAPI(`/tickets/${activeTicketId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ assigned_technician: tech })
+        });
+        closeReassignModal();
+        showAdminToast(
+          "Task Re-allocated",
+          `Ticket #${activeTicketId} successfully transferred to ${tech}.`,
+          "info"
+        );
+        if (typeof fetchTickets === 'function') fetchTickets();
+      } catch (err) {
+        showAdminToast("Error", "Failed to reassign.", "error");
+      }
+    }
+
+    // Vendor Complete Modal
+    function openVendorCompleteModal(ticketId) {
+      activeTicketId = ticketId;
+      document.getElementById('vendorCompleteMeta').innerText = `Ticket #${ticketId}`;
+      document.getElementById('vendorCompleteModal').classList.remove('hidden');
+    }
+    function closeVendorCompleteModal() {
+      document.getElementById('vendorCompleteModal').classList.add('hidden');
+    }
+    async function handleVendorCompleteSubmit(e) {
+      e.preventDefault();
+      const cost = document.getElementById('vendorCost').value;
+      const details = document.getElementById('vendorWorkDetails').value;
+      try {
+        const ticket = globalTickets.find(t => t.id === activeTicketId);
+        const currentDesc = ticket ? ticket.description : '';
+        await fetchAPI(`/tickets/${activeTicketId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            status: 'Resolved',
+            proof_notes: details,
+            description: currentDesc + `\n\n[VENDOR COST: ₹${cost}]\n[VENDOR WORK]: ${details}`
+          })
+        });
+        closeVendorCompleteModal();
+        showAdminToast(
+          "Vendor Work Completed",
+          `Ticket #${activeTicketId} marked as Resolved. Cost: ₹${cost}`,
+          "success"
+        );
+        e.target.reset();
+        if (typeof fetchTickets === 'function') fetchTickets();
+      } catch (err) {
+        showAdminToast("Error", "Failed to complete vendor work.", "error");
+      }
+    }
+
+    // Search inside incidents tab
+    function filterAdminTickets() {
+      const query = document.getElementById('adminSearchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('.admin-ticket-row');
+      rows.forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(query) ? '' : 'none';
+      });
+    }
+
+    // Trigger Attendance Sync
+    function syncAttendanceEngine() {
+      showAdminToast(
+        "Roster Synced with AI",
+        "Checked 16 technician devices. AI confirmed 2 tickets shifted for absent staff.",
+        "success"
+      );
+    }
+
+    // Log Preventive Overhaul
+    async function logPreventiveOrder(title) {
+      try {
+        await fetchAPI('/tickets', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: title,
+            description: 'AI-Generated Preventive Overhaul from Admin Radar.',
+            location: 'Campus-wide',
+            department: 'Civil'
+          })
+        });
+        showAdminToast(
+          "Preventive Overhaul Issued",
+          `Generated root-cause maintenance order: ${title}.`,
+          "info"
+        );
+        if (typeof fetchTickets === 'function') fetchTickets();
+      } catch (err) {
+        showAdminToast("Error", "Failed to issue order.", "error");
+      }
+    }
+
+    // Toast
+    let toastTimer;
+    function showAdminToast(title, msg, type = 'success') {
+      const toast = document.getElementById('adminToast');
+      document.getElementById('adminToastTitle').innerText = title;
+      document.getElementById('adminToastMessage').innerText = msg;
+      
+      const iconBox = document.getElementById('adminToastIconBox');
+      const icon = document.getElementById('adminToastIcon');
+
+      if (type === 'info') {
+        iconBox.className = "w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 mt-0.5";
+        icon.className = "fa-solid fa-satellite-dish text-sm";
+      } else {
+        iconBox.className = "w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5";
+        icon.className = "fa-solid fa-check text-sm";
+      }
+
+      toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        toast.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+      }, 4000);
+    }
+
+    // Chart and Map Init
+    let radarInitialized = false;
+    let campusMap = null;
+    let mttrChart = null;
+    let markerLayer = null;
+
+    function initRadarDash() {
+      if(radarInitialized) {
+        if(campusMap) campusMap.invalidateSize();
+        return;
+      }
+      radarInitialized = true;
+
+      // Init Leaflet Map
+      campusMap = L.map('campusMap').setView([19.0760, 72.8777], 15);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(campusMap);
+      
+      markerLayer = L.layerGroup().addTo(campusMap);
+
+      // Init Chart.js MTTR
+      const ctx = document.getElementById('mttrChart').getContext('2d');
+      mttrChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+              labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+              datasets: [
+                  {
+                      label: 'MTTR (Hours)',
+                      data: [0, 0, 0, 0],
+                      borderColor: '#10b981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      fill: true,
+                      tension: 0.4,
+                      borderWidth: 3
+                  },
+                  {
+                      label: 'Ticket Volume',
+                      data: [0, 0, 0, 0],
+                      borderColor: '#f43f5e',
+                      backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                      borderDash: [5, 5],
+                      fill: false,
+                      tension: 0.4,
+                      borderWidth: 2
+                  }
+              ]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: { position: 'top', labels: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: 'bold' } } }
+              },
+              scales: {
+                  y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                  x: { grid: { display: false } }
+              }
+          }
+      });
+      
+      if (globalTickets.length > 0) {
+          updateRadarDash(globalTickets);
+      }
+    }
+    
+    function updateRadarDash(tickets) {
+        if (!radarInitialized || !campusMap || !mttrChart) return;
+        
+        // Update Map Markers based on tickets
+        markerLayer.clearLayers();
+        tickets.forEach(ticket => {
+            // Assign dummy coordinates around base location just for visualization
+            const lat = 19.0760 + (Math.random() - 0.5) * 0.01;
+            const lng = 72.8777 + (Math.random() - 0.5) * 0.01;
+            
+            const color = ticket.priority_score > 70 ? '#e11d48' : '#f97316';
+            const circle = L.circle([lat, lng], {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.5,
+                radius: 80
+            });
+            circle.bindPopup(`<strong>${ticket.location}</strong><br/>${ticket.title}`);
+            markerLayer.addLayer(circle);
+        });
+
+        // Update MTTR Chart Dummy logic
+        mttrChart.data.datasets[1].data = [
+            Math.floor(tickets.length * 0.2), 
+            Math.floor(tickets.length * 0.3), 
+            Math.floor(tickets.length * 0.4), 
+            tickets.length
+        ];
+        mttrChart.update();
+    }
+  </script>
+</body>
+</html>

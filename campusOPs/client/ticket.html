@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusOps | Ticket Details & Audit Timeline</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+
+  <script src="js/i18n.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              coral: '#2563EB',
+              coralHover: '#1D4ED8',
+              peach: '#60A5FA',
+              apricot: '#2563EB',
+              apricotBg: '#EFF6FF',
+              marine: '#2563EB',
+              marineDark: '#1D4ED8'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: 
+        radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
+        #F8FAFC;
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 
+        0 4px 20px -2px rgba(15, 23, 42, 0.05),
+        0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    }
+
+    .btn-gradient {
+      background: #2563EB;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease-in-out;
+    }
+    .btn-gradient:hover {
+      background: #1D4ED8;
+      box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .focus-ring:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      outline: none;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased py-8 px-4 sm:px-8">
+
+  <main class="w-full max-w-5xl mx-auto space-y-8">
+
+    <!-- 1. SPACIOUS HEADER WITH BACK NAVIGATION -->
+    <header class="glass-card px-8 py-6 rounded-3xl flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <a href="student.html" class="w-12 h-12 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition cursor-pointer shadow-xs">
+          <i class="fa-solid fa-arrow-left text-base"></i>
+        </a>
+        <div>
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 leading-none">
+              Ticket <span class="text-blue-600" id="ticketIdDisplay">#TCK-...</span>
+            </h1>
+            <span id="ticketStatusBadge" class="text-xs font-black px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+              Loading...
+            </span>
+          </div>
+          <p data-i18n="ticket.subtitle" class="text-xs font-bold text-slate-400 mt-1.5 uppercase tracking-wider">
+            Live Telemetry, Evidence & Audit Timeline
+          </p>
+        </div>
+      </div>
+
+      <!-- Priority Badge & Language Switcher -->
+      <div class="flex items-center gap-3">
+        <div data-lang-switcher class="flex-shrink-0"></div>
+        <span id="ticketUpvotesBadge" class="inline-flex text-xs font-extrabold px-4 py-2 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 shadow-xs">
+          <i class="fa-solid fa-fire-flame-curved mr-1.5"></i> High Priority • ? Upvotes
+        </span>
+      </div>
+    </header>
+
+    <!-- 2. MAIN COMFORTABLE GRID LAYOUT -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- LEFT COLUMN: Problem Metadata & Evidence (7 Cols) -->
+      <section class="lg:col-span-7 space-y-8">
+        
+        <!-- Core Details Card -->
+        <div class="glass-card p-8 rounded-3xl space-y-5 border border-slate-100">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <span data-i18n="ticket.generalIssue" class="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-rose-100 text-rose-700">
+              General Issue
+            </span>
+            <span id="ticketTime" class="text-xs font-bold text-slate-400">Loading time...</span>
+          </div>
+
+          <div class="space-y-4">
+            <h2 id="ticketTitle" class="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
+              Loading Title...
+            </h2>
+            
+            <!-- Location Badge -->
+            <div class="p-4 bg-blue-50/60 rounded-2xl border border-blue-100/80 flex items-center justify-between text-sm font-bold text-slate-800">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-location-dot text-blue-600 text-lg"></i>
+                <span><span data-i18n="ticket.locationLabel">Location:</span> <strong id="ticketLocation" class="text-slate-900 font-black">...</strong></span>
+              </div>
+            </div>
+
+            <p id="ticketDescription" class="text-base text-slate-600 leading-relaxed font-medium">
+              Loading description...
+            </p>
+          </div>
+
+          <!-- Reporter Identity -->
+          <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-slate-500">
+            <span><span data-i18n="ticket.reportedBy">Reported by:</span> <strong id="ticketReporterName" class="text-slate-800 font-extrabold">Student Reporter</strong></span>
+            <span class="px-3 py-1 rounded-xl bg-purple-50 text-purple-700 font-extrabold border border-purple-200">
+              <i class="fa-solid fa-award mr-1"></i> <span data-i18n="ticket.verifiedSubmission">Verified Submission</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Before-Repair Evidence Photos -->
+        <div class="glass-card p-8 rounded-3xl space-y-4 border border-slate-100">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <i class="fa-solid fa-camera"></i> <span data-i18n="ticket.initialVisualProof">Initial Visual Proof Uploaded by Reporter</span>
+            </h3>
+            <span data-i18n="ticket.storedInDb" class="text-[11px] font-bold text-slate-400">Stored in DB</span>
+          </div>
+          <div id="ticketEvidenceContainer" class="grid grid-cols-1 gap-4">
+            <!-- Dynamic evidence rendered by ticket.js -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: Live Stepper Audit Timeline (5 Cols) -->
+      <section class="lg:col-span-5">
+        <div class="glass-card p-8 rounded-3xl space-y-7 border border-slate-100">
+          
+          <div>
+            <h3 data-i18n="ticket.operationalTimeline" class="text-lg font-black text-slate-900 tracking-tight">Live Operational Timeline</h3>
+            <p data-i18n="ticket.timelineSubtitle" class="text-xs text-slate-500 font-medium mt-0.5">Autonomous audit trail from report to final verification</p>
+          </div>
+
+          <!-- Stepper Container -->
+          <div id="ticketTimelineContainer" class="relative pl-7 space-y-8 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-blue-200">
+             <!-- Timeline will be rendered here dynamically by ticket.js -->
+          </div>
+
+          <!-- Post-Completion Rating Box -->
+          <div class="pt-6 border-t border-slate-100 space-y-3.5">
+            <div data-i18n="ticket.satisfactionFeedback" class="text-xs font-black text-slate-900 uppercase tracking-wider">Satisfaction Feedback</div>
+            <p data-i18n="ticket.rateRepair" class="text-xs text-slate-500 leading-relaxed font-medium">Rate the repair quality once resolution proof is verified by the campus team:</p>
+            <div id="ratingStars" class="flex items-center gap-2.5 text-slate-300 text-xl py-1">
+              <i class="fa-solid fa-star cursor-pointer hover:scale-110 transition" data-rating="1"></i>
+              <i class="fa-solid fa-star cursor-pointer hover:scale-110 transition" data-rating="2"></i>
+              <i class="fa-solid fa-star cursor-pointer hover:scale-110 transition" data-rating="3"></i>
+              <i class="fa-solid fa-star cursor-pointer hover:scale-110 transition" data-rating="4"></i>
+              <i class="fa-solid fa-star cursor-pointer hover:scale-110 transition" data-rating="5"></i>
+            </div>
+            <button id="submitRatingBtn" data-i18n="ticket.submitReview" class="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-md">
+              Submit Review
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm w-full bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-slate-700 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none z-50 flex items-start gap-3">
+    <div id="toastIconContainer" class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <i class="fa-solid fa-check text-sm" id="toastIcon"></i>
+    </div>
+    <div class="flex-1">
+      <h4 class="text-xs font-extrabold uppercase tracking-wider" id="toastHeader">Success</h4>
+      <p class="text-xs sm:text-sm text-slate-300 mt-0.5 font-medium" id="toastBody">Action completed.</p>
+    </div>
+  </div>
+
+  <script>
+    let toastTimeout;
+    function triggerToast(title, message, type = 'success') {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastHeader').innerText = title;
+      document.getElementById('toastBody').innerText = message;
+
+      toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        toast.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+      }, 3500);
+    }
+  </script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ticket.js"></script>
+</body>
+</html>

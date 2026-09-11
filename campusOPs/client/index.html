@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusOps | Choose Language / भाषा निवडा</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+  <script src="js/i18n.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              marine: '#2563EB',
+              marineDark: '#1D4ED8',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: 
+        radial-gradient(circle at 10% 15%, rgba(37, 99, 235, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 90% 85%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+        #F8FAFC;
+      min-height: 100vh;
+    }
+
+    .portal-frame {
+      background: #ffffff;
+      border: 1px solid #E2E8F0;
+      box-shadow: 
+        0 20px 40px -15px rgba(15, 23, 42, 0.07),
+        0 1px 3px 0 rgba(15, 23, 42, 0.04);
+    }
+
+    .lang-card {
+      border: 2px solid #E2E8F0;
+      background: #FFFFFF;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .lang-card:hover {
+      border-color: #2563EB;
+      background: #F8FAFC;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -6px rgba(37, 99, 235, 0.15);
+    }
+    .lang-card:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased flex flex-col justify-center items-center py-10 px-4 sm:px-6 min-h-screen">
+
+  <main class="w-full max-w-lg">
+    
+    <!-- BRAND HEADER -->
+    <div class="flex flex-col items-center text-center mb-8">
+      <div class="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xl shadow-blue-600/30 mb-4">
+        <i class="fa-solid fa-layer-group text-3xl"></i>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+        Campus<span class="text-blue-600">Ops</span>
+      </h1>
+      <p class="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">
+        Smart Campus Operations & Facility Portal
+      </p>
+    </div>
+
+    <!-- LANGUAGE SELECTION CARD -->
+    <div class="portal-frame rounded-[32px] p-6 sm:p-9">
+      
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">
+          <i class="fa-solid fa-language text-sm"></i> Language / भाषा
+        </div>
+        <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+          Choose Language / भाषा निवडा
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+          Select your preferred language to continue<br/>
+          पुढे जाण्यासाठी तुमची पसंतीची भाषा निवडा
+        </p>
+      </div>
+
+      <!-- LANGUAGE OPTIONS -->
+      <div class="space-y-4" role="radiogroup" aria-label="Select Language">
+        
+        <!-- ENGLISH OPTION -->
+        <button type="button" 
+                onclick="chooseLanguage('en')" 
+                id="btn-lang-en" 
+                class="lang-card w-full flex items-center gap-4 p-4 sm:p-5 rounded-2xl text-left cursor-pointer group">
+          <div class="w-14 h-14 rounded-2xl bg-slate-100 group-hover:bg-blue-50 border border-slate-200 group-hover:border-blue-200 flex items-center justify-center text-2xl flex-shrink-0 transition">
+            🇬🇧
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <div class="font-extrabold text-base sm:text-lg text-slate-900 group-hover:text-blue-600 transition">
+                English
+              </div>
+              <span class="text-xs font-bold text-slate-400 group-hover:text-blue-600 flex items-center gap-1 transition">
+                Continue <i class="fa-solid fa-arrow-right text-xs"></i>
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">
+              Standard interface for campus reporting & operations
+            </p>
+          </div>
+        </button>
+
+        <!-- MARATHI OPTION -->
+        <button type="button" 
+                onclick="chooseLanguage('mr')" 
+                id="btn-lang-mr" 
+                class="lang-card w-full flex items-center gap-4 p-4 sm:p-5 rounded-2xl text-left cursor-pointer group">
+          <div class="w-14 h-14 rounded-2xl bg-slate-100 group-hover:bg-blue-50 border border-slate-200 group-hover:border-blue-200 flex items-center justify-center text-2xl flex-shrink-0 transition">
+            🇮🇳
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <div class="font-extrabold text-base sm:text-lg text-slate-900 group-hover:text-blue-600 transition">
+                मराठी <span class="text-xs font-semibold text-slate-400 font-normal">(Marathi)</span>
+              </div>
+              <span class="text-xs font-bold text-slate-400 group-hover:text-blue-600 flex items-center gap-1 transition">
+                सुरू करा <i class="fa-solid fa-arrow-right text-xs"></i>
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">
+              कॅम्पस तक्रारी, समस्या निवारण व दैनंदिन माहितीसाठी
+            </p>
+          </div>
+        </button>
+
+      </div>
+
+      <!-- FOOTER INFO -->
+      <div class="mt-6 pt-5 border-t border-slate-100 text-center">
+        <p class="text-xs text-slate-400 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-slate-400"></i>
+          You can change the language anytime from the top bar
+        </p>
+        <p class="text-[11px] text-slate-400 mt-0.5">
+          तुम्ही नंतरही वरच्या मेनूमधून भाषा बदलू शकता
+        </p>
+      </div>
+
+    </div>
+
+    <!-- SYSTEM FOOTER -->
+    <div class="mt-6 text-center text-xs font-medium text-slate-400">
+      &copy; 2026 CampusOps Autonomous Management System
+    </div>
+
+  </main>
+
+  <script>
+    function chooseLanguage(lang) {
+      localStorage.setItem('campusops_language', lang);
+      localStorage.setItem('campusops_lang', lang);
+      if (window.i18n && typeof window.i18n.setLanguage === 'function') {
+        window.i18n.setLanguage(lang);
+      } else if (typeof setLanguage === 'function') {
+        setLanguage(lang);
+      }
+      
+      // Visual feedback
+      const btnEn = document.getElementById('btn-lang-en');
+      const btnMr = document.getElementById('btn-lang-mr');
+      const activeBtn = lang === 'en' ? btnEn : btnMr;
+      const otherBtn = lang === 'en' ? btnMr : btnEn;
+      
+      if (otherBtn) {
+        otherBtn.classList.remove('border-blue-600', 'bg-blue-50/50');
+      }
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white');
+        activeBtn.classList.add('border-blue-600', 'bg-blue-50/50');
+      }
+      
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 150);
+    }
+
+    // On page load, highlight currently selected language if exists
+    document.addEventListener('DOMContentLoaded', () => {
+      const cur = localStorage.getItem('campusops_language') || localStorage.getItem('campusops_lang');
+      if (cur === 'mr') {
+        const btnMr = document.getElementById('btn-lang-mr');
+        if (btnMr) btnMr.classList.add('border-blue-600', 'bg-blue-50/50');
+      } else if (cur === 'en') {
+        const btnEn = document.getElementById('btn-lang-en');
+        if (btnEn) btnEn.classList.add('border-blue-600', 'bg-blue-50/50');
+      }
+    });
+  </script>
+</body>
+</html>

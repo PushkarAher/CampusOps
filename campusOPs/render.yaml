@@ -1,0 +1,36 @@
+services:
+  # ---------------------------------------------------------------------------
+  # CampusOps Express Node.js Backend API Server
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: campusops-backend
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: INTELLIGENCE_URL
+        fromService:
+          type: web
+          name: campusops-intelligence
+          property: host
+
+  # ---------------------------------------------------------------------------
+  # CampusOps Python FastAPI Intelligence Microservice (Optional)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: campusops-intelligence
+    env: python
+    rootDir: intelligence
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /health

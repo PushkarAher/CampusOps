@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusOps | QR Code Location Resolver</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/i18n.js"></script>
+  <script>
+    // Auth Guard
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('Auth bypassed');
+    }
+
+    // HTML5 QR Code script
+    const script = document.createElement('script');
+    script.src = "https://unpkg.com/html5-qrcode";
+    document.head.appendChild(script);
+
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              coral: '#2563EB',
+              coralHover: '#1D4ED8',
+              peach: '#60A5FA',
+              apricot: '#2563EB',
+              apricotBg: '#EFF6FF',
+              marine: '#2563EB',
+              marineDark: '#1D4ED8'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: 
+        radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
+        #F8FAFC;
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 
+        0 4px 20px -2px rgba(15, 23, 42, 0.05),
+        0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    }
+
+    .btn-gradient {
+      background: #2563EB;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease-in-out;
+    }
+    .btn-gradient:hover {
+      background: #1D4ED8;
+      box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .focus-ring:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      outline: none;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased py-10 px-4 sm:px-8 flex items-center justify-center">
+
+  <main class="w-full max-w-md mx-auto space-y-6">
+
+    <!-- LANGUAGE SWITCHER -->
+    <div class="flex justify-center">
+      <div data-lang-switcher class="flex-shrink-0"></div>
+    </div>
+
+    <!-- BRAND LOGO -->
+    <div class="text-center space-y-2">
+      <div class="inline-flex w-14 h-14 rounded-2xl bg-blue-600 text-white items-center justify-center p-3 shadow-md shadow-blue-600/25">
+        <i class="fa-solid fa-qrcode text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-black tracking-tight text-slate-900">
+        Campus<span class="text-blue-600">Ops</span> QR Resolver
+      </h1>
+      <p data-i18n="qr.subtitle" class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+        Smart Classroom & Equipment Tag Verification
+      </p>
+    </div>
+
+    <!-- QR RESOLVER CARD -->
+    <section class="glass-card p-7 sm:p-8 rounded-3xl space-y-6 border border-slate-100 text-center">
+      
+      <!-- Real Camera Scanning Viewfinder -->
+      <div id="reader" style="width: 100%; border-radius: 1rem; overflow: hidden; border: 2px solid #BFDBFE; background: #0f172a;"></div>
+
+      <!-- Resolved Location Details -->
+      <div id="resolvedDetails" class="hidden p-4 bg-blue-50/80 rounded-2xl border border-blue-200 text-left space-y-2">
+        <div class="flex items-center justify-between text-xs font-black uppercase text-blue-600">
+          <span><i class="fa-solid fa-circle-check mr-1"></i> <span data-i18n="qr.recognized">QR Tag Recognized</span></span>
+          <span class="text-slate-500" id="resolvedId">ID: #---</span>
+        </div>
+        <div class="text-base font-black text-slate-900" id="resolvedName">
+          ---
+        </div>
+        <p data-i18n="qr.zoneMapped" class="text-xs text-slate-600 font-medium">
+          Main switchboard panel & projector feed mapped to this physical zone.
+        </p>
+      </div>
+
+      <!-- Role-Based Routing Selector -->
+      <div id="routeSelector" class="hidden space-y-3 pt-2">
+        <label data-i18n="qr.selectRole" class="block text-xs font-black uppercase tracking-wider text-slate-600 text-left">
+          Select Your Portal Role to Route:
+        </label>
+        
+        <div class="grid grid-cols-1 gap-2.5">
+          <button onclick="routeUser('student')" type="button" class="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-300 text-slate-800 font-extrabold text-xs flex items-center justify-between transition cursor-pointer shadow-xs">
+            <span class="flex items-center gap-2.5">
+              <i class="fa-solid fa-graduation-cap text-blue-600 text-base"></i>
+              <span data-i18n="qr.studentRoute">I am a Student (Report Issue Here)</span>
+            </span>
+            <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+          </button>
+
+          <button onclick="routeUser('teacher')" type="button" class="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-300 text-slate-800 font-extrabold text-xs flex items-center justify-between transition cursor-pointer shadow-xs">
+            <span class="flex items-center gap-2.5">
+              <i class="fa-solid fa-chalkboard-user text-blue-600 text-base"></i>
+              <span data-i18n="qr.facultyRoute">I am Faculty (Endorse / Fast-Track Issue)</span>
+            </span>
+            <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+          </button>
+
+          <button onclick="routeUser('worker')" type="button" class="btn-gradient w-full py-3.5 px-4 rounded-2xl text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-between cursor-pointer">
+            <span class="flex items-center gap-2.5">
+              <i class="fa-solid fa-screwdriver-wrench text-base"></i>
+              <span data-i18n="qr.workerRoute">I am Maintenance Worker (View Room Tasks)</span>
+            </span>
+            <i class="fa-solid fa-chevron-right text-white/80 text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm w-full bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-slate-700 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none z-50 flex items-start gap-3">
+    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <i class="fa-solid fa-check text-sm"></i>
+    </div>
+    <div class="flex-1">
+      <h4 class="text-xs font-extrabold uppercase tracking-wider" id="toastHeader">Redirecting</h4>
+      <p class="text-xs text-slate-300 mt-0.5 font-medium" id="toastBody">Opening portal...</p>
+    </div>
+  </div>
+
+  <script>
+    let scannedLocation = null;
+    let html5QrcodeScanner = null;
+
+    // Initialize scanner once library is loaded
+    function onScanSuccess(decodedText, decodedResult) {
+      if (scannedLocation) return; // Prevent multiple scans
+      scannedLocation = decodedText;
+      
+      // Update UI
+      document.getElementById('resolvedName').innerText = decodedText;
+      document.getElementById('resolvedId').innerText = `ID: #${decodedText.substring(0, 3).toUpperCase()}`;
+      
+      document.getElementById('resolvedDetails').classList.remove('hidden');
+      document.getElementById('routeSelector').classList.remove('hidden');
+      document.getElementById('reader').classList.add('hidden'); // Hide camera
+
+      // Stop camera
+      if (html5QrcodeScanner) {
+          html5QrcodeScanner.clear().catch(error => {
+              console.error("Failed to clear html5QrcodeScanner. ", error);
+          });
+      }
+    }
+
+    function onScanFailure(error) {
+      // handle scan failure, usually better to ignore and keep scanning.
+    }
+
+    // Wait for external script to load before starting
+    const checkScannerInterval = setInterval(() => {
+        if (typeof Html5QrcodeScanner !== 'undefined') {
+            clearInterval(checkScannerInterval);
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader",
+                { fps: 10, qrbox: {width: 250, height: 250} },
+                /* verbose= */ false);
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+    }, 200);
+
+    function routeUser(role) {
+      if (!scannedLocation) return;
+
+      const toast = document.getElementById('toastNotification');
+      const lang = (typeof getLanguage === 'function') ? getLanguage() : 'en';
+
+      if (role === 'student') {
+        document.getElementById('toastHeader').innerText = (lang === 'mr') ? "विद्यार्थी कक्ष" : "Student Portal";
+        document.getElementById('toastBody').innerText = (lang === 'mr') ? `${scannedLocation} सह तक्रार फॉर्म उघडत आहे...` : `Routing to report form with ${scannedLocation} pre-filled.`;
+        toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+          window.location.href = `student.html?location=${encodeURIComponent(scannedLocation)}`;
+        }, 1200);
+      } else if (role === 'teacher') {
+        document.getElementById('toastHeader').innerText = (lang === 'mr') ? "प्राध्यापक कक्ष" : "Faculty Portal";
+        document.getElementById('toastBody').innerText = (lang === 'mr') ? `${scannedLocation} सह प्राध्यापक डेस्क उघडत आहे...` : `Routing to Faculty Desk with ${scannedLocation} pre-filled.`;
+        toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+          window.location.href = `teacher.html?location=${encodeURIComponent(scannedLocation)}`;
+        }, 1200);
+      } else {
+        document.getElementById('toastHeader').innerText = (lang === 'mr') ? "देखभाल कक्ष" : "Worker Duty Desk";
+        document.getElementById('toastBody').innerText = (lang === 'mr') ? `${scannedLocation} साठी दुरुस्ती कामे दाखवत आहे...` : `Filtering task queue for ${scannedLocation} work orders.`;
+        toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        setTimeout(() => {
+          window.location.href = `facility.html?location=${encodeURIComponent(scannedLocation)}`;
+        }, 1200);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusOps | Authentication Gateway</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/i18n.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              coral: '#2563EB',
+              coralLight: '#3B82F6',
+              peach: '#60A5FA',
+              apricot: '#2563EB',
+              apricotBg: '#EFF6FF',
+              marine: '#2563EB',
+              marineDark: '#1D4ED8',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: 
+        radial-gradient(circle at 10% 15%, rgba(37, 99, 235, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 90% 85%, rgba(59, 130, 246, 0.04) 0%, transparent 45%),
+        #F8FAFC;
+      min-height: 100vh;
+    }
+
+    .portal-frame {
+      background: #ffffff;
+      border: 1px solid #E2E8F0;
+      box-shadow: 
+        0 20px 40px -15px rgba(15, 23, 42, 0.06),
+        0 1px 3px 0 rgba(15, 23, 42, 0.04);
+    }
+
+    .persona-rail {
+      background: #F8FAFC;
+      border-right: 1px solid #E2E8F0;
+    }
+
+    .role-tile-active {
+      background: #2563EB !important;
+      color: #ffffff !important;
+      box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.35);
+      border: 1px solid transparent !important;
+    }
+
+    .role-tile-inactive {
+      background: #ffffff;
+      border: 1px solid #E2E8F0;
+      color: #475569;
+    }
+    .role-tile-inactive:hover {
+      background: #F8FAFC;
+      color: #0f172a;
+      border-color: #CBD5E1;
+      transform: translateY(-1px);
+    }
+
+    .btn-submit-action {
+      background: #2563EB;
+      box-shadow: 0 10px 24px -4px rgba(37, 99, 235, 0.35);
+      transition: all 0.22s ease-in-out;
+    }
+    .btn-submit-action:hover {
+      background: #1D4ED8;
+      box-shadow: 0 14px 28px -3px rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .focus-ring:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.18);
+      outline: none;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased flex flex-col justify-center items-center py-8 px-4 sm:px-8 md:py-12">
+
+  <main class="w-full max-w-6xl">
+    
+    <!-- BRAND HEADER -->
+    <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-7 px-2">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/25 flex-shrink-0">
+          <i class="fa-solid fa-layer-group text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 leading-none">
+            Campus<span class="text-blue-600">Ops</span>
+          </h1>
+          <p class="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest mt-1.5" data-i18n="tagline">
+            Autonomous Facility & Academic Operations Hub
+          </p>
+        </div>
+      </div>
+      <!-- Language Switcher in Header -->
+      <div data-lang-switcher class="flex-shrink-0"></div>
+    </header>
+
+    <!-- UNIFIED PORTAL CARD -->
+    <div class="portal-frame rounded-[32px] overflow-hidden grid grid-cols-1 lg:grid-cols-12 items-stretch">
+
+      <!-- LEFT SIDEBAR: Active Persona Panel -->
+      <aside class="lg:col-span-4 persona-rail p-7 sm:p-9 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-200">
+        <div>
+          <!-- Header Tag -->
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+            <span class="text-xs sm:text-sm font-extrabold tracking-widest text-blue-600 uppercase flex items-center gap-2">
+              <i class="fa-solid fa-id-badge text-base"></i> <span data-i18n="login.activePersona">Active Persona</span>
+            </span>
+            <span id="activePersonaBadge" class="text-xs font-extrabold text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-xs">
+              01 • Student Desk
+            </span>
+          </div>
+
+          <!-- Role Tiles -->
+          <nav class="flex flex-col gap-3 mt-6" aria-label="Select role persona">
+            
+            <!-- Student Tile -->
+            <button type="button" onclick="changeRole('student')" id="btn-student" class="role-tile-active flex items-center gap-4 p-3.5 rounded-2xl transition text-left font-semibold cursor-pointer">
+              <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-graduation-cap text-base"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm leading-tight" data-i18n="roles.student">Student</div>
+                <div class="text-[11px] opacity-85 font-medium mt-0.5 truncate" data-i18n="login.studentSubtitle">Learner & Issue Reporter</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs opacity-75"></i>
+            </button>
+            
+            <!-- Faculty Tile -->
+            <button type="button" onclick="changeRole('teacher')" id="btn-teacher" class="role-tile-inactive flex items-center gap-4 p-3.5 rounded-2xl transition text-left font-medium cursor-pointer">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 transition">
+                <i class="fa-solid fa-chalkboard-user text-base"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm text-slate-900 leading-tight" data-i18n="roles.faculty">Faculty</div>
+                <div class="text-[11px] text-slate-400 font-medium mt-0.5 truncate" data-i18n="login.facultySubtitle">Academic Authority</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+            </button>
+            
+            <!-- Facility Tile -->
+            <button type="button" onclick="changeRole('worker')" id="btn-worker" class="role-tile-inactive flex items-center gap-4 p-3.5 rounded-2xl transition text-left font-medium cursor-pointer">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 transition">
+                <i class="fa-solid fa-screwdriver-wrench text-base"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm text-slate-900 leading-tight" data-i18n="roles.facility">Facility</div>
+                <div class="text-[11px] text-slate-400 font-medium mt-0.5 truncate" data-i18n="login.facilitySubtitle">Maintenance Crew</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+            </button>
+
+            <!-- Admin Tile (NEW) -->
+            <button type="button" onclick="changeRole('admin')" id="btn-admin" class="role-tile-inactive flex items-center gap-4 p-3.5 rounded-2xl transition text-left font-medium cursor-pointer">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 transition">
+                <i class="fa-solid fa-building-shield text-base"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm text-slate-900 leading-tight" data-i18n="roles.admin">Estate Admin</div>
+                <div class="text-[11px] text-slate-400 font-medium mt-0.5 truncate" data-i18n="login.adminSubtitle">Chief Operations Officer</div>
+              </div>
+              <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+            </button>
+
+          </nav>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT PANEL: Authentication Gateway -->
+      <section class="lg:col-span-8 p-7 sm:p-10 md:p-12 flex flex-col justify-between">
+        <div>
+          
+          <!-- Top Utility Bar -->
+          <div id="topUtilityBar" class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-7">
+            <!-- Segmented Mode Control -->
+            <div class="flex items-center bg-slate-100 p-1.5 rounded-2xl w-full sm:w-64 border border-slate-200">
+              <button id="tabLogin" type="button" onclick="setMode('login')" class="w-1/2 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-900 bg-white shadow-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-right-to-bracket text-xs text-blue-600"></i>
+                <span data-i18n="login.signInTab">Sign In</span>
+              </button>
+              <button id="tabSignup" type="button" onclick="setMode('signup')" class="w-1/2 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-user-plus text-xs"></i>
+                <span data-i18n="login.registerTab">Register</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section Headings -->
+          <div class="mb-6">
+            <h2 id="headingTitle" class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Student Gateway
+            </h2>
+            <p id="subheadingTitle" class="text-xs sm:text-sm text-slate-500 mt-1">
+              Sign in with PRN / Roll Number or college email to access campus reporting.
+            </p>
+          </div>
+
+          <!-- Form Area -->
+          <form id="authForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+            <div id="fieldsWrapper" class="space-y-4">
+              <!-- Dynamically populated inputs based on mode & role -->
+            </div>
+
+            <!-- Submit CTA -->
+            <button type="submit" id="submitActionBtn" class="btn-submit-action w-full mt-6 py-4 px-6 rounded-2xl text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2.5 group cursor-pointer uppercase tracking-wider">
+              <span id="submitActionLabel">ACCESS STUDENT HUB →</span>
+              <i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </button>
+          </form>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- API CONNECTION STATUS & CONFIGURATION -->
+    <footer class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 px-2">
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="activeApiDisplay">API Endpoint: <code class="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px]">Detecting...</code></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="promptChangeApiUrl()" class="text-blue-600 hover:text-blue-800 font-bold hover:underline flex items-center gap-1 cursor-pointer">
+          <i class="fa-solid fa-gear text-xs"></i> Set Render API URL
+        </button>
+        <span>•</span>
+        <a href="Qr-resolver.html" class="hover:text-blue-600 font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-qrcode text-xs"></i> QR Resolver
+        </a>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm w-full bg-slate-900/95 text-white rounded-2xl p-4 shadow-2xl backdrop-blur-xl border border-slate-700/80 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none z-50 flex items-start gap-3">
+    <div id="toastIconContainer" class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <i class="fa-solid fa-check text-sm" id="toastIcon"></i>
+    </div>
+    <div class="flex-1">
+      <h4 class="text-xs font-bold uppercase tracking-wider" id="toastHeader">Success</h4>
+      <p class="text-xs text-slate-300 mt-0.5" id="toastBody">Authenticated successfully.</p>
+    </div>
+    <button type="button" onclick="hideToast()" class="text-slate-400 hover:text-white text-xs">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <script>
+    let selectedRole = 'student';
+    let selectedMode = 'login';
+    let passwordVisible = false;
+
+    function getRoleContent() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      return {
+        student: {
+          badge: _t('login.studentBadge', "01 • Student Desk"),
+          loginTitle: _t('login.studentLoginTitle', "Student Gateway"),
+          loginSub: _t('login.studentLoginSub', "Sign in with PRN / Roll Number or college email to access campus reporting."),
+          signupTitle: _t('login.studentSignupTitle', "Student Account Registration"),
+          signupSub: _t('login.studentSignupSub', "Register your student credentials to log issues and track progress."),
+          loginAction: _t('login.studentLoginAction', "ACCESS STUDENT HUB →"),
+          signupAction: _t('login.studentSignupAction', "CREATE STUDENT ACCOUNT →"),
+          redirectUrl: "student.html"
+        },
+        teacher: {
+          badge: _t('login.teacherBadge', "02 • Faculty Authority"),
+          loginTitle: _t('login.teacherLoginTitle', "Faculty Academic Desk"),
+          loginSub: _t('login.teacherLoginSub', "Sign in with Faculty Employee ID to endorse urgent lecture issues."),
+          signupTitle: _t('login.teacherSignupTitle', "Faculty Account Registration"),
+          signupSub: _t('login.teacherSignupSub', "Register your academic profile with departmental information."),
+          loginAction: _t('login.teacherLoginAction', "ACCESS FACULTY DESK →"),
+          signupAction: _t('login.teacherSignupAction', "CREATE FACULTY ACCOUNT →"),
+          redirectUrl: "teacher.html"
+        },
+        worker: {
+          badge: _t('login.workerBadge', "03 • Operations Crew"),
+          loginTitle: _t('login.workerLoginTitle', "Maintenance & Facility Desk"),
+          loginSub: _t('login.workerLoginSub', "Sign in with Staff Worker ID or Phone to view prioritized repair tasks."),
+          signupTitle: _t('login.workerSignupTitle', "Facility Crew Registration"),
+          signupSub: _t('login.workerSignupSub', "Register your trade expertise and duty shift roster."),
+          loginAction: _t('login.workerLoginAction', "ACCESS FACILITY DESK →"),
+          signupAction: _t('login.workerSignupAction', "REGISTER MAINTENANCE WORKER →"),
+          redirectUrl: "facility.html"
+        },
+        admin: {
+          badge: _t('login.adminBadge', "04 • Estate Office"),
+          loginTitle: _t('login.adminLoginTitle', "Estate Admin Console"),
+          loginSub: _t('login.adminLoginSub', "Sign in with Master Estate Credentials for autonomous facility governance & vendor approval."),
+          signupTitle: _t('login.adminSignupTitle', "Admin Access Request"),
+          signupSub: _t('login.adminSignupSub', "Submit supervisor credentials for administrative authorization."),
+          loginAction: _t('login.adminLoginAction', "ACCESS ESTATE ADMIN CONSOLE →"),
+          signupAction: _t('login.adminSignupAction', "REQUEST ADMIN ACCESS →"),
+          redirectUrl: "admin.html"
+        }
+      };
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+    });
+
+    window.addEventListener('languageChanged', () => {
+      renderAll();
+    });
+
+    function changeRole(role) {
+      selectedRole = role;
+      const roles = ['student', 'teacher', 'worker', 'admin'];
+
+      roles.forEach(r => {
+        const btn = document.getElementById(`btn-${r}`);
+        const iconContainer = btn.querySelector('div');
+
+        if (r === role) {
+          btn.className = "role-tile-active flex items-center gap-4 p-3.5 rounded-2xl transition text-left font-semibold cursor-pointer";
+          if (iconContainer) iconContainer.className = "w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0";
+        } else {
+          btn.className = "role-tile-inactive flex items-center gap-4 p-3.5 rounded-2xl transition text-left font-medium cursor-pointer";
+          if (iconContainer) iconContainer.className = "w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 transition";
+        }
+      });
+
+      renderAll();
+    }
+
+    function setMode(mode) {
+      selectedMode = mode;
+      const tabLogin = document.getElementById('tabLogin');
+      const tabSignup = document.getElementById('tabSignup');
+
+      if (mode === 'login') {
+        tabLogin.className = "w-1/2 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-900 bg-white shadow-sm transition flex items-center justify-center gap-2";
+        tabSignup.className = "w-1/2 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2";
+      } else {
+        tabSignup.className = "w-1/2 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-900 bg-white shadow-sm transition flex items-center justify-center gap-2";
+        tabLogin.className = "w-1/2 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2";
+      }
+
+      renderAll();
+    }
+
+    function renderAll() {
+      const data = getRoleContent()[selectedRole];
+
+      document.getElementById('activePersonaBadge').innerText = data.badge;
+
+      const heading = document.getElementById('headingTitle');
+      const sub = document.getElementById('subheadingTitle');
+      const btnLabel = document.getElementById('submitActionLabel');
+      const topUtil = document.getElementById('topUtilityBar');
+
+      // Admin signup is locked / disabled for security; login mode is enforced for admin
+      if (selectedRole === 'admin') {
+        topUtil.style.display = 'none';
+        selectedMode = 'login';
+      } else {
+        topUtil.style.display = 'flex';
+      }
+
+      if (selectedMode === 'login') {
+        heading.innerText = data.loginTitle;
+        sub.innerText = data.loginSub;
+        btnLabel.innerText = data.loginAction;
+      } else {
+        heading.innerText = data.signupTitle;
+        sub.innerText = data.signupSub;
+        btnLabel.innerText = data.signupAction;
+      }
+
+      renderFormFields();
+      if (typeof applyTranslations === 'function') {
+        applyTranslations();
+      }
+    }
+
+    function renderFormFields() {
+      const wrapper = document.getElementById('fieldsWrapper');
+      // Save existing field values before re-rendering so user input isn't lost on language switch
+      const savedValues = {};
+      wrapper.querySelectorAll('input, select').forEach(input => {
+        if (input.name) savedValues[input.name] = input.value;
+      });
+
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      let html = '';
+
+      if (selectedMode === 'login') {
+        if (selectedRole === 'student') {
+          html = `
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.prnOrEmail', 'PRN / Roll Number or College Email *')}</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-regular fa-id-badge"></i>
+                </span>
+                <input type="text" name="identifier" required placeholder="${_t('login.placeholders.studentIdentifier', 'e.g. 2024CS1092 or roll.no@campus.edu')}" class="w-full pl-11 pr-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">${_t('login.password', 'Password *')}</label>
+                <a href="#" onclick="event.preventDefault(); triggerToast('${_t('login.passwordAssistance', 'Password Assistance')}', '${_t('login.passwordAssistanceMsg', 'Password recovery link dispatched via campus email/SMS.')}');" class="text-xs text-brand-coral font-semibold hover:underline">${_t('login.forgotPassword', 'Forgot Password?')}</a>
+              </div>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-solid fa-lock"></i>
+                </span>
+                <input id="inputPass" type="${passwordVisible ? 'text' : 'password'}" name="password" required placeholder="${_t('login.placeholders.password', '••••••••••••')}" class="w-full pl-11 pr-11 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+                <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-700 text-sm">
+                  <i class="fa-regular ${passwordVisible ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1.5 text-xs sm:text-sm">
+              <label class="flex items-center gap-2.5 cursor-pointer text-slate-600">
+                <input type="checkbox" name="remember" class="w-4 h-4 rounded text-brand-coral border-slate-300 focus:ring-brand-coral" checked />
+                <span>${_t('login.rememberTerminal', 'Remember this terminal')}</span>
+              </label>
+              <span class="text-xs text-brand-coral font-semibold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-brand-coral"></span> ${_t('login.safeKey', 'Student SafeKey')}
+              </span>
+            </div>
+
+            <div class="p-3 bg-indigo-50/90 rounded-2xl border border-indigo-200 flex items-center justify-between gap-3 mt-2">
+              <div class="text-xs text-indigo-900 font-semibold truncate">
+                <span class="font-extrabold text-indigo-700">${_t('login.demoStudent', 'Demo Student:')}</span> rohit.2024@campus.edu
+              </div>
+              <button type="button" onclick="fillStudentDemo()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
+                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+              </button>
+            </div>
+          `;
+        } else if (selectedRole === 'teacher') {
+          html = `
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.facultyIdOrEmail', 'Faculty Employee ID or Official Email *')}</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-solid fa-chalkboard-user"></i>
+                </span>
+                <input type="text" name="identifier" required placeholder="${_t('login.placeholders.facultyIdentifier', 'e.g. FAC-3042 or prof.sharma@campus.edu')}" class="w-full pl-11 pr-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.academicDepartment', 'Academic Department *')}</label>
+              <select name="deptCode" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                <option>${_t('login.departments.cs', 'Department of Computer Science & Engineering')}</option>
+                <option>${_t('login.departments.it', 'Department of Information Technology')}</option>
+                <option>${_t('login.departments.mech', 'Department of Mechanical Engineering')}</option>
+                <option>${_t('login.departments.civil', 'Department of Civil Engineering')}</option>
+                <option>${_t('login.departments.ee', 'Department of Electrical & Electronics')}</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">${_t('login.institutionalPassword', 'Institutional Password *')}</label>
+                <a href="#" onclick="event.preventDefault(); triggerToast('${_t('login.facultySso', 'Faculty SSO')}', '${_t('login.facultySsoMsg', 'Redirecting to campus Single Sign-On portal...')}')" class="text-xs text-brand-coral font-semibold hover:underline">${_t('login.useSso', 'Use SSO?')}</a>
+              </div>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-solid fa-lock"></i>
+                </span>
+                <input id="inputPass" type="${passwordVisible ? 'text' : 'password'}" name="password" required placeholder="${_t('login.placeholders.password', '••••••••••••')}" class="w-full pl-11 pr-11 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+                <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-700 text-sm">
+                  <i class="fa-regular ${passwordVisible ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1.5 text-xs sm:text-sm">
+              <label class="flex items-center gap-2.5 cursor-pointer text-slate-600">
+                <input type="checkbox" name="remember" class="w-4 h-4 rounded text-brand-coral border-slate-300 focus:ring-brand-coral" checked />
+                <span>${_t('login.keepSession', 'Keep Faculty Session Active')}</span>
+              </label>
+              <span class="text-xs text-purple-700 font-extrabold uppercase tracking-wider bg-purple-100 px-2.5 py-0.5 rounded-lg border border-purple-200">
+                ${_t('login.executivePriority', 'Executive SLA Priority')}
+              </span>
+            </div>
+
+            <div class="p-3 bg-purple-50/90 rounded-2xl border border-purple-200 flex items-center justify-between gap-3 mt-2">
+              <div class="text-xs text-purple-900 font-semibold truncate">
+                <span class="font-extrabold text-purple-700">${_t('login.demoFaculty', 'Demo Faculty:')}</span> prof.sharma@campus.edu
+              </div>
+              <button type="button" onclick="fillTeacherDemo()" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
+                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+              </button>
+            </div>
+          `;
+        } else if (selectedRole === 'worker') {
+          html = `
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.workerIdOrPhone', 'Staff / Worker ID or Mobile No. *')}</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-solid fa-helmet-safety"></i>
+                </span>
+                <input type="text" name="identifier" required placeholder="${_t('login.placeholders.workerIdentifier', 'e.g. WRK-504 or +919823045129')}" class="w-full pl-11 pr-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.assignedCategory', 'Assigned Category *')}</label>
+                <select name="trade" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.trades.electrical', 'Electrical Maintenance & Power')}</option>
+                  <option>${_t('login.trades.plumbing', 'Plumbing & Water Supply')}</option>
+                  <option>${_t('login.trades.hvac', 'HVAC & Lab Systems')}</option>
+                  <option>${_t('login.trades.sanitation', 'Sanitation & Waste')}</option>
+                  <option>${_t('login.trades.carpentry', 'Carpentry & Furniture')}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.primaryShift', 'Primary Duty Shift *')}</label>
+                <select name="shift" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.shifts.morning', 'Morning (07:00 - 15:00)')}</option>
+                  <option>${_t('login.shifts.general', 'General Day (09:00 - 17:00)')}</option>
+                  <option>${_t('login.shifts.evening', 'Evening (14:00 - 22:00)')}</option>
+                  <option>${_t('login.shifts.night', 'Night Duty (22:00 - 06:00)')}</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">${_t('login.passwordPin', 'Password / Pin *')}</label>
+                <a href="#" onclick="event.preventDefault(); triggerToast('${_t('login.supervisorHelp', 'Supervisor Helpline')}', '${_t('login.supervisorHelpMsg', 'Contact facility admin at Ext #404.')}')" class="text-xs text-brand-coral font-semibold hover:underline">${_t('login.supervisorPin', 'Supervisor PIN?')}</a>
+              </div>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-solid fa-key"></i>
+                </span>
+                <input id="inputPass" type="${passwordVisible ? 'text' : 'password'}" name="password" required placeholder="${_t('login.placeholders.password', '••••••••••••')}" class="w-full pl-11 pr-11 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+                <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-700 text-sm">
+                  <i class="fa-regular ${passwordVisible ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-orange-100/50 rounded-xl border border-orange-200/70 flex items-center justify-between text-xs sm:text-sm text-slate-700">
+              <span class="flex items-center gap-2 font-medium">
+                <i class="fa-solid fa-wifi text-emerald-500 text-sm"></i> ${_t('login.offlineActive', 'Offline Auto-Sync Cache Active')}
+              </span>
+              <span class="text-xs font-bold uppercase text-brand-apricot">${_t('login.triageEngine', 'Triage Engine')}</span>
+            </div>
+
+            <div class="p-3 bg-amber-50/90 rounded-2xl border border-amber-200 flex items-center justify-between gap-3 mt-2">
+              <div class="text-xs text-amber-900 font-semibold truncate">
+                <span class="font-extrabold text-amber-700">${_t('login.demoWorker', 'Demo Electrician:')}</span> electrician.ramesh@campus.edu
+              </div>
+              <button type="button" onclick="fillWorkerDemo()" class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
+                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+              </button>
+            </div>
+          `;
+        } else if (selectedRole === 'admin') {
+          html = `
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.estateIdOrEmail', 'Estate Officer ID or Master Email *')}</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-solid fa-building-shield"></i>
+                </span>
+                <input type="text" name="identifier" required placeholder="${_t('login.placeholders.adminIdentifier', 'e.g. ADMIN-01 or estate.office@campus.edu')}" class="w-full pl-11 pr-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.adminClearance', 'Administrative Clearance Level *')}</label>
+              <select name="adminLevel" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                <option>${_t('login.clearanceLevels.chief', 'Chief Estate & Operations Officer')}</option>
+                <option>${_t('login.clearanceLevels.senior', 'Senior Campus Maintenance Supervisor')}</option>
+                <option>${_t('login.clearanceLevels.vendor', 'Institutional Purchase & Vendor Controller')}</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">${_t('login.masterPassword', 'Master Security Password *')}</label>
+                <span class="text-xs text-rose-600 font-bold">${_t('login.tokenRequired', '2FA Token Required')}</span>
+              </div>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+                  <i class="fa-solid fa-lock"></i>
+                </span>
+                <input id="inputPass" type="${passwordVisible ? 'text' : 'password'}" name="password" required placeholder="${_t('login.placeholders.password', '••••••••••••')}" class="w-full pl-11 pr-11 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+                <button type="button" onclick="togglePassVisibility()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-700 text-sm">
+                  <i class="fa-regular ${passwordVisible ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-purple-50 rounded-xl border border-purple-200 text-xs font-bold text-purple-900 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-purple-600 text-sm"></i>
+              <span>${_t('login.masterGovernanceDesc', 'Master Governance: Full vendor PO approval & AI roster override active.')}</span>
+            </div>
+
+            <div class="p-3 bg-slate-100/90 rounded-2xl border border-slate-300 flex items-center justify-between gap-3 mt-2">
+              <div class="text-xs text-slate-900 font-semibold truncate">
+                <span class="font-extrabold text-slate-700">${_t('login.demoAdmin', 'Demo Admin:')}</span> estate.office@campus.edu
+              </div>
+              <button type="button" onclick="fillAdminDemo()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
+                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+              </button>
+            </div>
+          `;
+        }
+      } else {
+        const commonTop = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.fullName', 'Full Legal Name *')}</label>
+              <input type="text" name="fullName" required placeholder="${_t('login.placeholders.fullName', 'e.g. Aditi Sharma')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.mobileNumber', 'Mobile Number (SMS Alerts) *')}</label>
+              <input type="tel" name="phone" required placeholder="${_t('login.placeholders.phone', 'e.g. +91 98230 45129')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.officialEmail', 'Official Institutional Email *')}</label>
+            <input type="email" name="email" required placeholder="${_t('login.placeholders.email', 'name@campus.edu')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+          </div>
+        `;
+
+        let roleFields = '';
+
+        if (selectedRole === 'student') {
+          roleFields = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.studentPrn', 'Student PRN / Roll Number *')}</label>
+                <input type="text" name="studentId" required placeholder="${_t('login.placeholders.studentPrn', 'e.g. 2024CS1092')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.departmentBranch', 'Department / Branch *')}</label>
+                <select name="department" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.departments.cs', 'Department of Computer Science & Engineering')}</option>
+                  <option>${_t('login.departments.it', 'Department of Information Technology')}</option>
+                  <option>${_t('login.departments.mech', 'Department of Mechanical Engineering')}</option>
+                  <option>${_t('login.departments.civil', 'Department of Civil Engineering')}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.academicYear', 'Academic Year *')}</label>
+                <select name="academicYear" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.years.y1', 'Year 1 (Sem 1–2)')}</option>
+                  <option>${_t('login.years.y2', 'Year 2 (Sem 3–4)')}</option>
+                  <option>${_t('login.years.y3', 'Year 3 (Sem 5–6)')}</option>
+                  <option>${_t('login.years.y4', 'Year 4 (Sem 7–8)')}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.divisionSection', 'Division / Section *')}</label>
+                <input type="text" name="division" required placeholder="${_t('login.placeholders.division', 'e.g. Div B – Batch B2')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+            </div>
+
+            <div class="p-3 bg-indigo-50/90 rounded-2xl border border-indigo-200 flex items-center justify-between gap-3 mt-1">
+              <div class="text-xs text-indigo-900 font-semibold truncate">
+                <span class="font-extrabold text-indigo-700">${_t('login.quickTest', 'Quick Test:')}</span> ${_t('login.studentRegDemoDesc', 'Populate sample student registration')}
+              </div>
+              <button type="button" onclick="fillStudentRegisterDemo()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
+                ${_t('login.quickFillDemo', '⚡ Quick Fill Demo')}
+              </button>
+            </div>
+          `;
+        } else if (selectedRole === 'teacher') {
+          roleFields = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.facultyId', 'Faculty Employee ID *')}</label>
+                <input type="text" name="facultyId" required placeholder="${_t('login.placeholders.facultyId', 'e.g. EMP-3042')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.academicDepartment', 'Academic Department *')}</label>
+                <select name="department" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.departments.cs', 'Department of Computer Science & Engineering')}</option>
+                  <option>${_t('login.departments.it', 'Department of Information Technology')}</option>
+                  <option>${_t('login.departments.mech', 'Department of Mechanical Engineering')}</option>
+                  <option>${_t('login.departments.civil', 'Department of Civil Engineering')}</option>
+                  <option>${_t('login.departments.ee', 'Department of Electrical & Electronics')}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.designation', 'Designation *')}</label>
+                <select name="designation" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.designations.asstProf', 'Assistant Professor')}</option>
+                  <option>${_t('login.designations.assocProf', 'Associate Professor')}</option>
+                  <option>${_t('login.designations.hod', 'Head of Department (HOD)')}</option>
+                  <option>${_t('login.designations.labInCharge', 'Lab In-charge')}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.cabinNo', 'Cabin / Room No *')}</label>
+                <input type="text" name="cabinNo" required placeholder="${_t('login.placeholders.cabinNo', 'e.g. Block B - Room 304')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+            </div>
+
+            <div class="p-3 bg-purple-50/90 rounded-2xl border border-purple-200 flex items-center justify-between gap-3 mt-1">
+              <div class="text-xs text-purple-900 font-semibold truncate">
+                <span class="font-extrabold text-purple-700">${_t('login.quickTest', 'Quick Test:')}</span> ${_t('login.facultyRegDemoDesc', 'Populate sample faculty registration')}
+              </div>
+              <button type="button" onclick="fillTeacherRegisterDemo()" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
+                ${_t('login.quickFillDemo', '⚡ Quick Fill Demo')}
+              </button>
+            </div>
+          `;
+        } else if (selectedRole === 'worker') {
+          roleFields = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.workerId', 'Staff Worker ID *')}</label>
+                <input type="text" name="workerId" required placeholder="${_t('login.placeholders.workerId', 'e.g. WRK-504')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.assignedCategory', 'Assigned Category / Trade *')}</label>
+                <select name="trade" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.trades.electrical', 'Electrical Maintenance & Power')}</option>
+                  <option>${_t('login.trades.plumbing', 'Plumbing & Water Supply')}</option>
+                  <option>${_t('login.trades.sanitation', 'Sanitation & Waste')}</option>
+                  <option>${_t('login.trades.it', 'IT & Network Infrastructure')}</option>
+                  <option>${_t('login.trades.carpentry', 'Carpentry & Furniture')}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.primaryShift', 'Primary Duty Shift *')}</label>
+                <select name="shift" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition">
+                  <option>${_t('login.shifts.morning', 'Morning (07:00 - 15:00)')}</option>
+                  <option>${_t('login.shifts.general', 'General Day (09:00 - 17:00)')}</option>
+                  <option>${_t('login.shifts.evening', 'Evening (14:00 - 22:00)')}</option>
+                  <option>${_t('login.shifts.night', 'Night Duty (22:00 - 06:00)')}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.supervisorExt', 'Supervisor Extension *')}</label>
+                <input type="text" name="supervisor" required placeholder="${_t('login.placeholders.supervisorExt', 'Supervisor Ext or Phone')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+              </div>
+            </div>
+
+            <div class="p-3 bg-amber-50/90 rounded-2xl border border-amber-200 flex items-center justify-between gap-3 mt-1">
+              <div class="text-xs text-amber-900 font-semibold truncate">
+                <span class="font-extrabold text-amber-700">${_t('login.quickTest', 'Quick Test:')}</span> ${_t('login.workerRegDemoDesc', 'Populate sample maintenance crew')}
+              </div>
+              <button type="button" onclick="fillWorkerRegisterDemo()" class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
+                ${_t('login.quickFillDemo', '⚡ Quick Fill Demo')}
+              </button>
+            </div>
+          `;
+        }
+
+        const commonBottom = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.createPassword', 'Create Password *')}</label>
+              <input type="password" name="password" required placeholder="${_t('login.placeholders.createPassword', 'Min. 8 characters')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">${_t('login.confirmPassword', 'Confirm Password *')}</label>
+              <input type="password" name="confirmPassword" required placeholder="${_t('login.placeholders.confirmPassword', 'Re-type password')}" class="w-full px-4 py-3 bg-white/85 border border-slate-200/90 rounded-xl text-sm text-slate-800 focus-ring transition" />
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <label class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-600 cursor-pointer">
+              <input type="checkbox" required class="w-4 h-4 rounded text-brand-coral border-slate-300 mt-0.5" checked />
+              <span>${_t('login.confirmRecords', 'I confirm my details correspond with the official campus records.')}</span>
+            </label>
+          </div>
+        `;
+
+        html = commonTop + roleFields + commonBottom;
+      }
+
+      wrapper.innerHTML = html;
+
+      // Restore previous values so user does not lose input on language switch
+      Object.keys(savedValues).forEach(name => {
+        const input = wrapper.querySelector(`[name="${name}"]`);
+        if (input && savedValues[name]) input.value = savedValues[name];
+      });
+    }
+
+    function togglePassVisibility() {
+      passwordVisible = !passwordVisible;
+      const field = document.getElementById('inputPass');
+      if (field) field.type = passwordVisible ? 'text' : 'password';
+      renderFormFields();
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const roleLabel = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
+      const targetPage = getRoleContent()[selectedRole].redirectUrl;
+
+      const identifier = e.target.identifier ? e.target.identifier.value : null;
+      const password = e.target.password.value;
+
+      const apiBase = (typeof getActiveApiBaseUrl === 'function') ? getActiveApiBaseUrl() : ((window.CAMPUSOPS_CONFIG && window.CAMPUSOPS_CONFIG.API_BASE_URL) || 'http://localhost:5000/api');
+
+      if (selectedMode === 'login') {
+        try {
+          const response = await fetch(`${apiBase}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: identifier, password })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            triggerToast(_t('login.loginFailed', 'Login Failed'), data.error || _t('login.invalidCredentials', 'Invalid credentials'), 'error');
+            return;
+          }
+
+          const userRole = data.user?.user_metadata?.role || roleLabel;
+          localStorage.setItem('token', data.session?.access_token || '');
+          localStorage.setItem('role', userRole);
+
+          // If the account has a registered role, prioritize its destination
+          let redirectUrl = targetPage;
+          const normalizedRole = userRole.toLowerCase();
+          
+          if (normalizedRole === 'teacher' || normalizedRole === 'faculty') {
+            redirectUrl = 'teacher.html';
+          } else if (normalizedRole === 'student') {
+            redirectUrl = 'student.html';
+          } else if (normalizedRole === 'worker' || normalizedRole === 'facility worker') {
+            redirectUrl = 'facility.html';
+          } else if (normalizedRole === 'admin' || normalizedRole === 'estate admin') {
+            redirectUrl = 'admin.html';
+          }
+
+          triggerToast(
+            `${_t('login.loggedInAs', 'Logged In as')} ${userRole}`,
+            _t('login.redirecting', 'Authentication verified. Redirecting to portal...'),
+            'success'
+          );
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 1200);
+        } catch (error) {
+          console.error("Login Error:", error);
+          const errorMsg = (error instanceof TypeError && error.message.includes('fetch'))
+            ? `Unable to reach server at ${apiBase}. If your backend is on Render free tier, please allow ~30s for it to wake up.`
+            : _t('login.unableConnect', 'Unable to connect to server');
+          triggerToast(_t('common.error', 'Error'), errorMsg, 'error');
+        }
+      } else {
+        // Registration logic
+        const formData = Object.fromEntries(new FormData(e.target));
+        
+        if (formData.password !== formData.confirmPassword) {
+            triggerToast(_t('common.error', 'Error'), _t('login.passwordsMismatch', 'Passwords do not match'), 'error');
+            return;
+        }
+
+        try {
+          const response = await fetch(`${apiBase}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...formData,
+                role: roleLabel
+            })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            triggerToast(_t('login.registrationFailed', 'Registration Failed'), data.error || _t('login.unableCreateAccount', 'Unable to create account'), 'error');
+            return;
+          }
+
+          triggerToast(_t('login.registrationComplete', 'Registration Complete!'), _t('login.accountCreatedMsg', 'Account created. You can now sign in immediately.'), 'success');
+          
+          setTimeout(() => {
+            setMode('login');
+            // If registered as teacher, pre-fill the identifier
+            if (formData.email) {
+              const ident = document.querySelector('input[name="identifier"]');
+              if (ident) ident.value = formData.email;
+            }
+          }, 1200);
+          
+        } catch (error) {
+          console.error("Registration Error:", error);
+          const errorMsg = (error instanceof TypeError && error.message.includes('fetch'))
+            ? `Unable to reach server at ${apiBase}. If your backend is on Render free tier, please allow ~30s for it to wake up.`
+            : _t('login.unableConnect', 'Unable to connect to server');
+          triggerToast(_t('common.error', 'Error'), errorMsg, 'error');
+        }
+      }
+    }
+
+    let toastTimeout;
+    function triggerToast(title, message, status = 'success') {
+      const toast = document.getElementById('toastNotification');
+      const h = document.getElementById('toastHeader');
+      const b = document.getElementById('toastBody');
+      const icon = document.getElementById('toastIcon');
+      const box = document.getElementById('toastIconContainer');
+
+      h.innerText = title;
+      b.innerText = message;
+
+      if (status === 'error') {
+        box.className = "w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0 mt-0.5";
+        icon.className = "fa-solid fa-triangle-exclamation text-sm";
+      } else {
+        box.className = "w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5";
+        icon.className = "fa-solid fa-check text-sm";
+      }
+
+      toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        hideToast();
+      }, 4000);
+    }
+
+    function hideToast() {
+      const toast = document.getElementById('toastNotification');
+      toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+    }
+
+    function fillStudentDemo() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const ident = document.querySelector('input[name="identifier"]');
+      const pass = document.querySelector('input[name="password"]');
+      if (ident) ident.value = 'rohit.2024@campus.edu';
+      if (pass) pass.value = 'Student@123';
+      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoStudentLoaded', 'Sample student credentials loaded.'), 'success');
+    }
+
+    function fillTeacherDemo() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const ident = document.querySelector('input[name="identifier"]');
+      const pass = document.querySelector('input[name="password"]');
+      if (ident) ident.value = 'prof.sharma@campus.edu';
+      if (pass) pass.value = 'Teacher@123';
+      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoTeacherLoaded', 'Sample teacher credentials loaded.'), 'success');
+    }
+
+    function fillWorkerDemo() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const ident = document.querySelector('input[name="identifier"]');
+      const pass = document.querySelector('input[name="password"]');
+      if (ident) ident.value = 'electrician.ramesh@campus.edu';
+      if (pass) pass.value = 'Worker@123';
+      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoWorkerLoaded', 'Sample worker credentials loaded.'), 'success');
+    }
+
+    function fillAdminDemo() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const ident = document.querySelector('input[name="identifier"]');
+      const pass = document.querySelector('input[name="password"]');
+      if (ident) ident.value = 'estate.office@campus.edu';
+      if (pass) pass.value = 'password123';
+      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoAdminLoaded', 'Sample admin credentials loaded.'), 'success');
+    }
+
+    function fillStudentRegisterDemo() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const name = document.querySelector('input[name="fullName"]');
+      const phone = document.querySelector('input[name="phone"]');
+      const email = document.querySelector('input[name="email"]');
+      const studentId = document.querySelector('input[name="studentId"]');
+      const division = document.querySelector('input[name="division"]');
+      const pass = document.querySelector('input[name="password"]');
+      const cpass = document.querySelector('input[name="confirmPassword"]');
+      
+      if (name) name.value = 'Demo Student';
+      if (phone) phone.value = '9876543210';
+      if (email) email.value = `student.${rand}@campus.edu`;
+      if (studentId) studentId.value = `2024CS${rand}`;
+      if (division) division.value = 'Div A';
+      if (pass) pass.value = 'Student@123';
+      if (cpass) cpass.value = 'Student@123';
+      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoStudentRegLoaded', 'Sample student registration details loaded.'), 'success');
+    }
+
+    function fillTeacherRegisterDemo() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const name = document.querySelector('input[name="fullName"]');
+      const phone = document.querySelector('input[name="phone"]');
+      const email = document.querySelector('input[name="email"]');
+      const facultyId = document.querySelector('input[name="facultyId"]');
+      const cabin = document.querySelector('input[name="cabinNo"]');
+      const pass = document.querySelector('input[name="password"]');
+      const cpass = document.querySelector('input[name="confirmPassword"]');
+
+      if (name) name.value = 'Demo Teacher';
+      if (phone) phone.value = '9876543211';
+      if (email) email.value = `teacher.${rand}@campus.edu`;
+      if (facultyId) facultyId.value = `FAC-${rand}`;
+      if (cabin) cabin.value = 'Block B - Room 304';
+      if (pass) pass.value = 'Teacher@123';
+      if (cpass) cpass.value = 'Teacher@123';
+      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoTeacherRegLoaded', 'Sample teacher registration details loaded.'), 'success');
+    }
+
+    function fillWorkerRegisterDemo() {
+      const _t = (k, f) => (window.t ? window.t(k, f) : f);
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const name = document.querySelector('input[name="fullName"]');
+      const phone = document.querySelector('input[name="phone"]');
+      const email = document.querySelector('input[name="email"]');
+      const workerId = document.querySelector('input[name="workerId"]');
+      const supervisor = document.querySelector('input[name="supervisor"]');
+      const pass = document.querySelector('input[name="password"]');
+      const cpass = document.querySelector('input[name="confirmPassword"]');
+
+      if (name) name.value = 'Demo Worker';
+      if (phone) phone.value = '9876543212';
+      if (email) email.value = `worker.${rand}@campus.edu`;
+      if (workerId) workerId.value = `WRK-${rand}`;
+      if (supervisor) supervisor.value = 'Ext #404';
+      if (pass) pass.value = 'Worker@123';
+      if (cpass) cpass.value = 'Worker@123';
+      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoWorkerRegLoaded', 'Sample worker registration details loaded.'), 'success');
+    }
+
+    function updateApiDisplay() {
+      const el = document.getElementById('activeApiDisplay');
+      if (el) {
+        const currentUrl = (typeof getActiveApiBaseUrl === 'function') 
+          ? getActiveApiBaseUrl() 
+          : ((window.CAMPUSOPS_CONFIG && window.CAMPUSOPS_CONFIG.API_BASE_URL) || 'http://localhost:5000/api');
+        el.innerHTML = `API Target: <code class="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px] font-bold">${currentUrl}</code>`;
+      }
+    }
+
+    function promptChangeApiUrl() {
+      const current = (typeof getActiveApiBaseUrl === 'function') 
+        ? getActiveApiBaseUrl() 
+        : ((window.CAMPUSOPS_CONFIG && window.CAMPUSOPS_CONFIG.API_BASE_URL) || 'http://localhost:5000/api');
+      const custom = prompt(
+        "Enter your deployed Render backend API URL (or leave empty to reset to auto-detect):\nExample: https://campusops-backend.onrender.com/api",
+        current
+      );
+      if (custom !== null) {
+        if (typeof window.setCampusOpsApiUrl === 'function') {
+          window.setCampusOpsApiUrl(custom.trim());
+        } else {
+          if (custom.trim()) localStorage.setItem('CAMPUSOPS_API_URL', custom.trim());
+          else localStorage.removeItem('CAMPUSOPS_API_URL');
+        }
+        updateApiDisplay();
+        triggerToast("Backend Target Updated", `Communicating with: ${(typeof getActiveApiBaseUrl === 'function') ? getActiveApiBaseUrl() : custom}`, "success");
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateApiDisplay();
+    });
+  </script>
+</body>
+</html>

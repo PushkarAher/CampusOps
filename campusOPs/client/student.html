@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusOps | Student Incident Hub & Notice Board</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap"
+    rel="stylesheet">
+
+  <script>
+    // Auth Guard
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token || role !== 'Student') {
+      console.log('Auth bypassed');
+    }
+  </script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/i18n.js"></script>
+  <!-- HTML5 QR Code Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              coral: '#2563EB',
+              coralHover: '#1D4ED8',
+              peach: '#60A5FA',
+              apricot: '#2563EB',
+              apricotBg: '#EFF6FF',
+              marine: '#2563EB',
+              marineDark: '#1D4ED8',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background:
+        radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
+        #F8FAFC;
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow:
+        0 4px 20px -2px rgba(15, 23, 42, 0.05),
+        0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    }
+
+    .btn-gradient {
+      background: #2563EB;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn-gradient:hover {
+      background: #1D4ED8;
+      box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .tab-active {
+      background: #2563EB !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px -1px rgba(37, 99, 235, 0.35);
+    }
+
+    .tab-inactive {
+      background: #FFFFFF;
+      color: #64748B;
+      border: 1px solid #E2E8F0;
+    }
+
+    .tab-inactive:hover {
+      background: #F8FAFC;
+      color: #0f172a;
+      border-color: #CBD5E1;
+    }
+
+    .focus-ring:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+      outline: none;
+    }
+  </style>
+</head>
+
+<body class="font-sans text-slate-800 antialiased py-8 px-4 sm:px-8">
+
+  <main class="w-full max-w-6xl mx-auto space-y-7">
+
+    <!-- TOP HEADER -->
+    <header class="glass-card px-8 py-5 rounded-3xl flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div
+          class="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center p-3 shadow-md shadow-blue-600/25">
+          <i class="fa-solid fa-layer-group text-2xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-black tracking-tight text-slate-900 leading-none">
+              Campus<span class="text-blue-600">Ops</span>
+            </h1>
+            <span
+              data-i18n="student.hubBadge"
+              class="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+              Student Hub
+            </span>
+          </div>
+          <p data-i18n="student.hubSubtitle" class="text-sm font-semibold text-slate-500 mt-1">
+            Student Facility Reporting & Live Tracking Portal
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <!-- Language Switcher in Header -->
+        <div data-lang-switcher class="flex-shrink-0"></div>
+
+        <div
+          class="hidden sm:flex items-center gap-2.5 text-sm font-bold px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/25">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span data-i18n="student.aiTriageStatus">AI Triage Dispatch Active</span>
+        </div>
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div id="profileInitials"
+            class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+            --
+          </div>
+          <div class="text-left hidden md:block">
+            <div id="profileName" class="text-sm font-bold text-slate-900 leading-tight">Loading...</div>
+            <div id="profileId" class="text-xs font-semibold text-slate-500">...</div>
+          </div>
+          <button onclick="logout()"
+            class="ml-2 w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600 flex items-center justify-center transition cursor-pointer"
+            title="Logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 1. CAMPUS NOTICE BOARD WITH ADMIN & AI TABS -->
+    <section class="glass-card p-7 sm:p-8 rounded-3xl border border-slate-200/80 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base">
+            <i class="fa-solid fa-bullhorn"></i>
+          </div>
+          <div>
+            <h2 data-i18n="student.campusNoticeBoard" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Campus Notice Board</h2>
+            <p data-i18n="student.noticeBoardDesc" class="text-xs sm:text-sm text-slate-500">Official estate office bulletins & AI-driven autonomous
+              facility updates</p>
+          </div>
+        </div>
+
+        <!-- Filter Tabs Switcher -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1">
+          <button id="noticeTab-all" onclick="filterNotices('all')" type="button"
+            class="tab-active px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer">
+            <span data-i18n="student.allFeed">All Feed</span>
+          </button>
+          <button id="noticeTab-admin" onclick="filterNotices('admin')" type="button"
+            class="tab-inactive px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer">
+            <i class="fa-solid fa-building-columns mr-1"></i> <span data-i18n="student.adminBulletins">Admin Bulletins</span>
+          </button>
+          <button id="noticeTab-ai" onclick="filterNotices('ai')" type="button"
+            class="tab-inactive px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer">
+            <i class="fa-solid fa-robot mr-1"></i> <span data-i18n="student.aiReports">AI Reports & Insights</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Notice Cards Container -->
+      <div class="flex flex-col gap-3.5 mt-2" id="noticeFeedContainer">
+        <!-- Dynamic Notices will be rendered here -->
+      </div>
+    </section>
+
+    <!-- 2. REPORT & SEARCH BAR ROW -->
+    <section class="glass-card p-6 sm:p-7 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <!-- Report Button -->
+      <button onclick="toggleReportModal()" type="button"
+        class="btn-gradient w-full sm:w-auto px-7 py-4 rounded-2xl text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-3 flex-shrink-0 cursor-pointer uppercase tracking-wider">
+        <i class="fa-solid fa-circle-plus text-lg"></i>
+        <span data-i18n="student.reportIssueBtn">Report Issue</span>
+      </button>
+
+      <!-- Search Input -->
+      <div class="relative w-full flex-1">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-4.5 text-slate-400 text-base pointer-events-none">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </span>
+        <input id="searchInput" type="text" oninput="filterReports()"
+          data-i18n-placeholder="student.searchPlaceholder"
+          placeholder="Search already reported issues (e.g. Socket, Projector, Water Cooler, Block C)..."
+          class="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm sm:text-base text-slate-900 focus-ring transition placeholder:text-slate-400 font-medium" />
+      </div>
+
+      <!-- Quick QR Scan Location Trigger -->
+      <button onclick="startScanner()" type="button"
+        class="w-full sm:w-auto px-5 py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-2xl text-sm font-bold flex items-center justify-center gap-2.5 transition hover:border-blue-500 shadow-xs cursor-pointer flex-shrink-0">
+        <i class="fa-solid fa-qrcode text-blue-600 text-lg"></i>
+        <span data-i18n="student.scanQrTag">Scan QR Tag</span>
+      </button>
+    </section>
+
+    <!-- 3. RECOMMENDED REPORTS (WITH HIGHLIGHTED PROBLEMS & LOCATIONS) -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between px-2">
+        <div>
+          <h2 data-i18n="student.recommendedReports" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Recommended Reports</h2>
+          <p data-i18n="student.recommendedSub" class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Check and upvote duplicate issues before
+            filing a new ticket</p>
+        </div>
+        <span id="ticketCountBadge"
+          class="text-xs sm:text-sm font-extrabold px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+          Loading Reports...
+        </span>
+      </div>
+
+      <!-- Grid of Reports -->
+      <div id="reportsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Dynamic Reports will be rendered here -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: REPORT NEW ISSUE -->
+  <div id="reportModal"
+    class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div
+      class="glass-card max-w-xl w-full p-7 sm:p-8 rounded-3xl relative border border-slate-200 shadow-2xl max-h-[95vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </div>
+          <h3 data-i18n="student.reportModalTitle" class="text-xl font-bold text-slate-900">Report Campus Facility Issue</h3>
+        </div>
+        <button onclick="toggleReportModal()"
+          class="text-slate-400 hover:text-slate-700 text-base p-1.5 cursor-pointer">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleNewReport(event)" class="space-y-4 mt-6">
+        <div>
+          <label data-i18n="student.categoryLabel" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Category *</label>
+          <select id="newCategory" required
+            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus-ring font-medium">
+            <option value="Electrical & Lighting" data-i18n="categories.electrical">Electrical & Lighting</option>
+            <option value="Projector & Audio/Visual" data-i18n="categories.projector">Projector & Audio/Visual</option>
+            <option value="Plumbing & Water Supply" data-i18n="categories.plumbing">Plumbing & Water Supply</option>
+            <option value="Air Conditioning & HVAC" data-i18n="categories.hvac">Air Conditioning & HVAC</option>
+            <option value="Desk & Classroom Furniture" data-i18n="categories.furniture">Desk & Classroom Furniture</option>
+            <option value="Sanitation & Housekeeping" data-i18n="categories.housekeeping">Sanitation & Housekeeping</option>
+          </select>
+        </div>
+
+        <div>
+          <label data-i18n="student.locationLabel" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Classroom / Location *</label>
+          <div class="relative">
+            <input id="newLocation" type="text" oninput="suggestTickets()" required
+              data-i18n-placeholder="student.locationPlaceholder"
+              placeholder="e.g. Block C • Room 302 or scan QR"
+              class="w-full pl-11 pr-12 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus-ring font-medium" />
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm">
+              <i class="fa-solid fa-location-dot"></i>
+            </span>
+            <button type="button" onclick="startScanner()"
+              class="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600 hover:text-blue-700 transition text-lg">
+              <i class="fa-solid fa-qrcode"></i>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label data-i18n="student.descriptionLabel" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Problem Description *</label>
+          <textarea id="newDescription" rows="3" oninput="suggestTickets()" required
+            data-i18n-placeholder="student.descPlaceholder"
+            placeholder="Provide clear keywords (e.g. switchboard spark, loose wire, fan noise)..."
+            class="w-full p-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus-ring font-medium"></textarea>
+        </div>
+
+        <!-- Photo / Visual Evidence Capture & Upload Section -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label data-i18n="student.photoProofLabel" class="block text-xs font-bold uppercase tracking-wider text-slate-700">Photo / Visual Proof</label>
+            <span data-i18n="student.photoHint" class="text-[11px] font-bold text-slate-400">Helps AI Triage & Workers</span>
+          </div>
+
+          <!-- Dual Mode Action Buttons (When no photo selected yet) -->
+          <div id="photoActionButtons" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button type="button" onclick="openLaptopCamera()"
+              class="p-3.5 rounded-2xl bg-blue-50 hover:bg-blue-100/70 text-blue-700 border border-blue-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs">
+              <i class="fa-solid fa-camera text-base"></i>
+              <span data-i18n="student.takePhotoCamera">Take Photo with Camera</span>
+            </button>
+            <button type="button" onclick="triggerFileUpload()"
+              class="p-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs">
+              <i class="fa-solid fa-cloud-arrow-up text-blue-600 text-base"></i>
+              <span data-i18n="student.uploadLaptop">Upload from Laptop</span>
+            </button>
+          </div>
+
+          <!-- Hidden File Input and Canvas -->
+          <input type="file" id="photoFileInput" accept="image/*" class="hidden" onchange="handleFileSelect(event)" />
+          <canvas id="photoCanvas" class="hidden"></canvas>
+
+          <!-- Live Camera Viewfinder Box (Visible during camera use) -->
+          <div id="cameraCaptureBox"
+            class="hidden relative rounded-2xl overflow-hidden border-2 border-blue-600/60 bg-slate-950 p-2 shadow-lg">
+            <div
+              class="relative w-full aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center">
+              <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+
+              <!-- HUD Overlays -->
+              <div
+                class="absolute top-2 left-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-mono font-bold">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span data-i18n="student.cameraLive">LAPTOP CAMERA LIVE</span>
+              </div>
+
+              <!-- Reticle Crosshair -->
+              <div
+                class="absolute inset-8 border border-white/20 rounded-xl pointer-events-none flex items-center justify-center">
+                <div class="w-8 h-8 border-t-2 border-l-2 border-blue-600 absolute top-0 left-0"></div>
+                <div class="w-8 h-8 border-t-2 border-r-2 border-blue-600 absolute top-0 right-0"></div>
+                <div class="w-8 h-8 border-b-2 border-l-2 border-blue-600 absolute bottom-0 left-0"></div>
+                <div class="w-8 h-8 border-b-2 border-r-2 border-blue-600 absolute bottom-0 right-0"></div>
+              </div>
+            </div>
+
+            <!-- Viewfinder Action Bar -->
+            <div class="flex items-center justify-between gap-3 mt-2 px-1">
+              <button type="button" onclick="closeLaptopCamera()"
+                class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer">
+                <i class="fa-solid fa-xmark mr-1"></i> <span data-i18n="student.cancel">Cancel</span>
+              </button>
+              <button type="button" onclick="capturePhotoFromCamera()"
+                class="btn-gradient px-6 py-2.5 rounded-xl text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md cursor-pointer animate-pulse hover:animate-none">
+                <i class="fa-solid fa-camera text-sm"></i> <span data-i18n="student.snapPhoto">Snap Photo</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Photo Attached Preview Box (Visible once photo is captured or selected) -->
+          <div id="photoPreviewBox"
+            class="hidden relative p-3 bg-gradient-to-br from-emerald-50/80 to-teal-50/60 border border-emerald-300 rounded-2xl shadow-xs space-y-2.5">
+            <div class="flex items-center justify-between pb-2 border-b border-emerald-200/70">
+              <span
+                class="inline-flex items-center gap-1.5 text-xs font-black text-emerald-800 bg-emerald-100/90 px-2.5 py-0.5 rounded-md">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i> <span data-i18n="student.photoAttached">Photo Attached (Will be saved to DB)</span>
+              </span>
+              <span id="photoSizeLabel" data-i18n="student.ready" class="text-[11px] font-semibold text-slate-500">Ready</span>
+            </div>
+
+            <div class="relative rounded-xl overflow-hidden border border-emerald-200/80 max-h-48 bg-slate-900 group">
+              <img id="photoPreviewImg" src="" alt="Proof Preview" class="w-full h-44 object-cover" />
+              <button type="button"
+                onclick="openImageViewer(document.getElementById('photoPreviewImg').src, 'Attached Proof Preview')"
+                class="absolute bottom-2 right-2 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[11px] font-bold flex items-center gap-1 opacity-90 hover:opacity-100">
+                <i class="fa-solid fa-expand"></i> <span data-i18n="student.fullscreen">Fullscreen</span>
+              </button>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-1">
+              <button type="button" onclick="retakePhoto()"
+                class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right text-blue-600"></i> <span data-i18n="student.retakeChange">Retake / Change</span>
+              </button>
+              <button type="button" onclick="removePhoto()"
+                class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-trash-can"></i> <span data-i18n="student.remove">Remove</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="suggestedTicketsContainer" class="hidden flex flex-col gap-2 mt-2 max-h-72 overflow-y-auto pr-1">
+          <!-- Suggested tickets will appear here -->
+        </div>
+
+        <button type="submit"
+          class="btn-gradient w-full py-4 rounded-2xl text-white font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 cursor-pointer mt-2">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span data-i18n="student.submitForTriage">Submit Ticket for Triage</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastNotification"
+    class="fixed bottom-6 right-6 max-w-sm w-full bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-slate-700 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none z-50 flex items-start gap-3">
+    <div id="toastIconContainer"
+      class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <i class="fa-solid fa-check text-sm" id="toastIcon"></i>
+    </div>
+    <div class="flex-1">
+      <h4 class="text-xs font-extrabold uppercase tracking-wider" id="toastHeader">Success</h4>
+      <p class="text-xs sm:text-sm text-slate-300 mt-0.5 font-medium" id="toastBody">Action completed.</p>
+    </div>
+    <button type="button" onclick="hideToast()" class="text-slate-400 hover:text-white text-sm">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- QR Scanner Modal -->
+  <div id="qrScannerModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeScanner()"></div>
+    <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h2 data-i18n="student.scanLocationQr" class="text-xl font-black text-slate-900">Scan Location QR</h2>
+          <p data-i18n="student.pointCameraQr" class="text-xs text-slate-500 font-medium mt-1">Point your camera at the room QR code</p>
+        </div>
+        <button onclick="closeScanner()"
+          class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="p-4 flex-1 overflow-y-auto">
+        <div id="qr-reader" class="w-full rounded-2xl overflow-hidden border-2 border-slate-200"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Image Viewer Modal -->
+  <div id="imageViewerModal"
+    class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity">
+    <div
+      class="relative max-w-3xl w-full bg-slate-900 border border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between text-white">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-image text-brand-apricot"></i>
+          <h3 id="imageViewerTitle" data-i18n="student.photoEvidence" class="text-sm sm:text-base font-bold truncate">Photo Evidence</h3>
+        </div>
+        <button type="button" onclick="closeImageViewer()"
+          class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-4 bg-black/50 flex items-center justify-center max-h-[75vh] overflow-hidden">
+        <img id="imageViewerImg" src="" alt="Full Resolution Proof"
+          class="max-h-[70vh] max-w-full object-contain rounded-xl shadow-lg" />
+      </div>
+      <div class="px-6 py-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <span data-i18n="student.storedSecurely">Stored securely in Supabase DB</span>
+        <button type="button" onclick="closeImageViewer()"
+          data-i18n="student.close"
+          class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+
+</html>

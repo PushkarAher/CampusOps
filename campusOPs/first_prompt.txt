@@ -1,0 +1,19 @@
+You are an expert full-stack engineer and blockchain architect. I am building "CampusOps," a hybrid campus facility management platform. 
+
+Here is my project context and folder structure:
+- Frontend UI: HTML5 + Tailwind CSS files located in the `client/` folder (admin.html, facility.html, login.html, qr-resolver.html, student.html, teacher.html, ticket.html).
+- Database & Authentication: Supabase (PostgreSQL + Supabase Auth).
+- Architecture Style: Hybrid. Daily operations (student reporting, worker job queues, upvotes, live tracking, notices) run on centralized Supabase DB for ultra-fast response times. High-value security logs and financial vendor PO escrow payments run on decentralized smart contracts (`smart-contracts/`).
+
+Please perform the following tasks:
+1. Initialize the Node.js backend inside `server/` using Express, CORS, and the official `@supabase/supabase-js` client package.
+2. Create `server/config/supabaseClient.js` to initialize the Supabase connection using environment variables from `.env`.
+3. Build backend controllers (`server/controllers/`) and routes (`server/routes/api.js`) to handle:
+   - User authentication and role session mapping (Student, Faculty, Facility Worker, Estate Admin).
+   - Fast CRUD operations for tickets, upvote counters, and notice board broadcasts.
+4. Create the `middleware/rbac.js` file to verify Supabase Auth JWT tokens and secure role-based access.
+5. Set up a Hardhat environment inside `smart-contracts/` containing `VendorEscrow.sol` for outside vendor purchase order fund management and `TrustChainAudit.sol` for immutable hazard log checkpoints.
+6. Write `middleware/blockchain-bridge.js` using `ethers.js` to bridge centralized Supabase database events (such as Admin PO approvals) to our decentralized smart contracts.
+7. Update all HTML files in `client/` to connect cleanly with these backend API endpoints and Supabase client scripts.
+
+Let's begin scaffolding the project step by step.

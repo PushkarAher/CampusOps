@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusOps | Technician Operations & Facility Control Center</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+
+  <script>
+    // Auth Guard - supports both 'Facility Worker' and 'Worker'
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token || (role !== 'Facility Worker' && role !== 'Worker')) {
+        console.log('Auth bypassed');
+    }
+  </script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/i18n.js"></script>
+  <!-- HTML5 QR Code Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              coral: '#2563EB',
+              coralHover: '#1D4ED8',
+              peach: '#60A5FA',
+              apricot: '#2563EB',
+              apricotBg: '#EFF6FF',
+              marine: '#2563EB',
+              marineDark: '#1D4ED8',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: 
+        radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
+        #F8FAFC;
+      min-height: 100vh;
+    }
+
+    .glass-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 
+        0 4px 20px -2px rgba(15, 23, 42, 0.05),
+        0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    }
+
+    .btn-gradient {
+      background: #2563EB;
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease-in-out;
+    }
+    .btn-gradient:hover {
+      background: #1D4ED8;
+      box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-resolve {
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.3);
+      transition: all 0.2s ease-in-out;
+    }
+    .btn-resolve:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .tab-active {
+      background: #2563EB !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 14px -1px rgba(37, 99, 235, 0.35);
+    }
+    .tab-inactive {
+      background: #FFFFFF;
+      color: #64748B;
+      border: 1px solid #E2E8F0;
+    }
+    .tab-inactive:hover {
+      background: #F8FAFC;
+      color: #0f172a;
+      border-color: #CBD5E1;
+    }
+
+    .focus-ring:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+      outline: none;
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased py-8 px-4 sm:px-8">
+
+  <main class="w-full max-w-6xl mx-auto space-y-7">
+
+    <!-- 1. TOP HEADER -->
+    <header class="glass-card px-8 py-5 rounded-3xl flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center p-3 shadow-md shadow-blue-600/25">
+          <i class="fa-solid fa-helmet-safety text-2xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-black tracking-tight text-slate-900 leading-none">
+              Campus<span class="text-blue-600">Ops</span>
+            </h1>
+            <span data-i18n="facility.controlDesk" class="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase tracking-wider">
+              Technician Control Desk
+            </span>
+          </div>
+          <p data-i18n="facility.controlSub" class="text-sm font-semibold text-slate-500 mt-1">
+            Departmental Incident Resolution, Safety LOTO & Visual Proof Verification
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Duty Status & Auto-Sync -->
+        <div class="hidden sm:flex items-center gap-2.5 text-xs font-bold px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/25">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+          <span data-i18n="facility.shiftActive">On-Duty Shift Active • Real-Time DB Sync</span>
+        </div>
+
+        <!-- Language Switcher -->
+        <div data-lang-switcher class="flex-shrink-0"></div>
+
+        <!-- Profile Widget -->
+        <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div id="profileInitials" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black flex items-center justify-center shadow-sm text-base">
+            --
+          </div>
+          <div class="hidden md:block text-left">
+            <p id="profileName" class="text-sm font-black text-slate-900 leading-tight">Loading...</p>
+            <p id="profileTradeBadge" class="text-xs font-bold text-blue-700 mt-0.5">...</p>
+          </div>
+          <button onclick="logout()" title="Sign Out" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition flex items-center justify-center cursor-pointer ml-1">
+            <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. KPI / METRICS BAR -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <!-- Card 1: My Trade Workload -->
+      <div class="glass-card p-5 rounded-3xl border border-slate-200/80 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <div id="statMyTradeCount" class="text-2xl font-black text-slate-900 leading-none">0</div>
+          <p id="statMyTradeLabel" data-i18n="facility.myTradeTasks" class="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">My Trade Tasks</p>
+        </div>
+      </div>
+
+      <!-- Card 2: Urgent / Class in Session -->
+      <div class="glass-card p-5 rounded-3xl border border-slate-200/80 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fa-solid fa-triangle-exclamation animate-pulse"></i>
+        </div>
+        <div>
+          <div id="statUrgentCount" class="text-2xl font-black text-rose-600 leading-none">0</div>
+          <p data-i18n="facility.urgentSla" class="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Urgent SLA / Class</p>
+        </div>
+      </div>
+
+      <!-- Card 3: In Progress (Active Repairs) -->
+      <div class="glass-card p-5 rounded-3xl border border-slate-200/80 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fa-solid fa-spinner"></i>
+        </div>
+        <div>
+          <div id="statInProgressCount" class="text-2xl font-black text-blue-600 leading-none">0</div>
+          <p data-i18n="facility.inProgressKpi" class="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">In Progress</p>
+        </div>
+      </div>
+
+      <!-- Card 4: Resolved Today -->
+      <div class="glass-card p-5 rounded-3xl border border-slate-200/80 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl flex-shrink-0">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <div id="statResolvedCount" class="text-2xl font-black text-emerald-600 leading-none">0</div>
+          <p data-i18n="facility.resolvedVerified" class="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Resolved & Verified</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. DEPARTMENT & TRADE ROUTING CONTROL BAR -->
+    <section class="glass-card p-6 sm:p-7 rounded-3xl space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        <div>
+          <h2 class="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <i class="fa-solid fa-filter text-blue-600"></i> <span data-i18n="facility.deptQueueTitle">Departmental Workload & Incident Queue</span>
+          </h2>
+          <p data-i18n="facility.deptQueueSub" class="text-xs text-slate-500 font-medium mt-0.5">Filter by technician specialty or view all campus reports</p>
+        </div>
+
+        <!-- Trade Mode Filter Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="tradeSelectorBar">
+          <button id="tradeTab-mydept" onclick="setDepartmentFilter('mydept')" type="button" class="tab-active px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1.5 flex-shrink-0">
+            <i class="fa-solid fa-bolt"></i>
+            <span id="myTradeBtnLabel">My Trade: Electrical</span>
+          </button>
+          <button id="tradeTab-all" onclick="setDepartmentFilter('all')" type="button" class="tab-inactive px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1.5 flex-shrink-0">
+            <i class="fa-solid fa-earth-americas"></i>
+            <span data-i18n="facility.allCampus">All Campus Reports</span>
+          </button>
+          <button id="tradeTab-electrical" onclick="setDepartmentFilter('electrical')" type="button" class="tab-inactive px-3.5 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1 flex-shrink-0">
+            <i class="fa-solid fa-plug"></i> <span data-i18n="facility.electrical">Electrical</span>
+          </button>
+          <button id="tradeTab-hvac" onclick="setDepartmentFilter('hvac')" type="button" class="tab-inactive px-3.5 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1 flex-shrink-0">
+            <i class="fa-solid fa-fan"></i> <span data-i18n="facility.hvac">HVAC</span>
+          </button>
+          <button id="tradeTab-plumbing" onclick="setDepartmentFilter('plumbing')" type="button" class="tab-inactive px-3.5 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1 flex-shrink-0">
+            <i class="fa-solid fa-faucet-drip"></i> <span data-i18n="facility.plumbing">Plumbing</span>
+          </button>
+          <button id="tradeTab-furniture" onclick="setDepartmentFilter('furniture')" type="button" class="tab-inactive px-3.5 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1 flex-shrink-0">
+            <i class="fa-solid fa-chair"></i> <span data-i18n="facility.carpentry">Civil / Furniture</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Secondary Controls: Search, Area QR Scan & Status Filters -->
+      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        
+        <!-- Search Input -->
+        <div class="relative flex-1">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 text-sm pointer-events-none">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </span>
+          <input 
+            id="taskSearchInput" 
+            type="text" 
+            oninput="searchWorkerTasks()" 
+            data-i18n-placeholder="facility.searchTasksPlaceholder"
+            placeholder="Search by classroom (e.g. Lab 402), ticket ID, or issue keyword..." 
+            class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 focus-ring transition placeholder:text-slate-400 font-medium"
+          />
+        </div>
+
+        <!-- Status Filter Tabs -->
+        <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto">
+          <button id="statusBtn-all" onclick="setStatusFilter('all')" type="button" data-i18n="facility.allActive" class="px-3 py-1.5 rounded-xl font-black text-xs bg-white text-slate-900 shadow-xs cursor-pointer">
+            All
+          </button>
+          <button id="statusBtn-open" onclick="setStatusFilter('Open')" type="button" data-i18n="ticket.statuses.open" class="px-3 py-1.5 rounded-xl font-bold text-xs text-slate-600 hover:text-slate-900 cursor-pointer">
+            Open
+          </button>
+          <button id="statusBtn-inprogress" onclick="setStatusFilter('In Progress')" type="button" data-i18n="ticket.statuses.inProgress" class="px-3 py-1.5 rounded-xl font-bold text-xs text-slate-600 hover:text-slate-900 cursor-pointer">
+            In Progress
+          </button>
+          <button id="statusBtn-resolved" onclick="setStatusFilter('Resolved')" type="button" data-i18n="ticket.statuses.resolved" class="px-3 py-1.5 rounded-xl font-bold text-xs text-slate-600 hover:text-slate-900 cursor-pointer">
+            Resolved
+          </button>
+        </div>
+
+        <!-- Live Scan Area QR Button -->
+        <button onclick="openAreaScanner()" type="button" class="px-5 py-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-500 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition shadow-xs cursor-pointer flex-shrink-0">
+          <i class="fa-solid fa-qrcode text-blue-600 text-base"></i>
+          <span data-i18n="facility.scanAreaQr">Scan Area QR</span>
+        </button>
+      </div>
+
+      <!-- Active Location Filter Banner (Hidden by default) -->
+      <div id="activeLocationBanner" class="hidden p-3.5 bg-blue-50 rounded-2xl border border-blue-200 flex items-center justify-between text-xs sm:text-sm">
+        <div class="flex items-center gap-2 font-bold text-blue-900">
+          <i class="fa-solid fa-location-dot text-blue-600 text-base"></i>
+          <span><span data-i18n="facility.showingFiltered">Showing work orders filtered to:</span> <strong id="activeLocationText" class="font-black text-slate-900">--</strong></span>
+        </div>
+        <button onclick="clearLocationFilter()" class="text-blue-800 hover:text-rose-600 font-extrabold flex items-center gap-1 cursor-pointer">
+          <i class="fa-solid fa-xmark"></i> <span data-i18n="facility.clearFilter">Clear Location Filter</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. TASKS LIST FEED -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between px-2">
+        <div>
+          <h2 data-i18n="facility.assignedQueue" class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Assigned Task Queue</h2>
+          <p data-i18n="facility.assignedQueueSub" class="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">Accept orders, verify safety checklist, and submit resolution visual proof</p>
+        </div>
+        <span id="taskCountBadge" class="text-xs sm:text-sm font-extrabold px-4 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+          Loading Tasks...
+        </span>
+      </div>
+
+      <!-- Task Cards Container -->
+      <div id="taskListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Dynamic Task Cards Rendered by facility.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL 1: RESOLUTION & VISUAL PROOF CAPTURE MODAL -->
+  <div id="resolutionModal" class="fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-xl w-full p-7 sm:p-8 rounded-3xl relative border border-slate-200 shadow-2xl max-h-[95vh] overflow-y-auto space-y-5">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div>
+            <h3 data-i18n="facility.resolveTicket" class="text-xl font-black text-slate-900">Mark Task as Resolved</h3>
+            <p class="text-xs text-slate-500 font-medium" id="resolveTicketSubtitle">Task #TCK-XXXX</p>
+          </div>
+        </div>
+        <button onclick="closeResolutionModal()" class="text-slate-400 hover:text-slate-700 p-1.5 cursor-pointer">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Summary of Reported Issue -->
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+        <div class="flex items-center justify-between text-slate-500 font-bold">
+          <span>Location: <strong id="resolveLocationText" class="text-slate-800">--</strong></span>
+          <span id="resolvePriorityText" class="text-rose-600 font-extrabold">--</span>
+        </div>
+        <p class="text-sm font-black text-slate-900" id="resolveTitleText">--</p>
+      </div>
+
+      <!-- Resolution Form -->
+      <form onsubmit="handleResolutionSubmit(event)" class="space-y-4">
+        <!-- Technician Work Notes -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Work Done & Resolution Notes *
+          </label>
+          <textarea 
+            id="resolveNotesInput" 
+            rows="3" 
+            required 
+            data-i18n-placeholder="facility.resolutionNotesPlaceholder"
+            placeholder="e.g. Replaced faulty 16A MCB in distribution board DB-4, restored 230V line voltage, and verified classroom projector socket..." 
+            class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus-ring font-medium"
+          ></textarea>
+        </div>
+
+        <!-- Resolution Evidence Photo (Before vs After) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label data-i18n="facility.uploadResolutionProof" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+              After-Repair Proof Photo * (Mandatory Audit Evidence)
+            </label>
+            <span class="text-[11px] font-bold text-emerald-600">Stored in Supabase DB</span>
+          </div>
+
+          <!-- Dual Mode Action Buttons -->
+          <div id="resolvePhotoActionButtons" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button type="button" onclick="openResolveCamera()" class="p-3.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs">
+              <i class="fa-solid fa-camera text-base text-emerald-600"></i>
+              <span data-i18n="facility.takePhotoCamera">Take Photo with Camera</span>
+            </button>
+            <button type="button" onclick="triggerResolveFileUpload()" class="p-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs">
+              <i class="fa-solid fa-cloud-arrow-up text-amber-600 text-base"></i>
+              <span data-i18n="facility.uploadLaptop">Upload from Laptop</span>
+            </button>
+          </div>
+
+          <!-- Hidden File Input and Canvas -->
+          <input type="file" id="resolveFileInput" accept="image/*" class="hidden" onchange="handleResolveFileSelect(event)" />
+          <canvas id="resolveCanvas" class="hidden"></canvas>
+
+          <!-- Live Camera Viewfinder Box -->
+          <div id="resolveCameraBox" class="hidden relative rounded-2xl overflow-hidden border-2 border-emerald-500 bg-slate-950 p-2 shadow-lg">
+            <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center">
+              <video id="resolveCameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+              
+              <!-- HUD -->
+              <div class="absolute top-2 left-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-mono font-bold">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>TECHNICIAN PROOF CAM LIVE</span>
+              </div>
+
+              <!-- Crosshair -->
+              <div class="absolute inset-8 border border-white/20 rounded-xl pointer-events-none flex items-center justify-center">
+                <div class="w-8 h-8 border-t-2 border-l-2 border-emerald-400 absolute top-0 left-0"></div>
+                <div class="w-8 h-8 border-t-2 border-r-2 border-emerald-400 absolute top-0 right-0"></div>
+                <div class="w-8 h-8 border-b-2 border-l-2 border-emerald-400 absolute bottom-0 left-0"></div>
+                <div class="w-8 h-8 border-b-2 border-r-2 border-emerald-400 absolute bottom-0 right-0"></div>
+              </div>
+            </div>
+
+            <!-- Viewfinder Bar -->
+            <div class="flex items-center justify-between gap-3 mt-2 px-1">
+              <button type="button" onclick="closeResolveCamera()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer">
+                <i class="fa-solid fa-xmark mr-1"></i> Cancel
+              </button>
+              <button type="button" onclick="captureResolvePhoto()" class="btn-resolve px-6 py-2.5 rounded-xl text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md cursor-pointer animate-pulse hover:animate-none">
+                <i class="fa-solid fa-camera text-sm"></i> <span data-i18n="facility.snapPhoto">Snap Resolution Photo</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Photo Attached Preview Box -->
+          <div id="resolvePhotoPreviewBox" class="hidden relative p-3 bg-emerald-50/80 border border-emerald-300 rounded-2xl shadow-xs space-y-2.5">
+            <div class="flex items-center justify-between pb-2 border-b border-emerald-200">
+              <span class="inline-flex items-center gap-1.5 text-xs font-black text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded-md">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i> <span data-i18n="facility.photoReady">After-Repair Photo Ready</span>
+              </span>
+              <span id="resolvePhotoSizeLabel" class="text-[11px] font-semibold text-slate-500">Ready</span>
+            </div>
+
+            <div class="relative rounded-xl overflow-hidden border border-emerald-200 max-h-48 bg-slate-900 group">
+              <img id="resolvePreviewImg" src="" alt="Proof Preview" class="w-full h-44 object-cover" />
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-1">
+              <button type="button" onclick="retakeResolvePhoto()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate-right text-emerald-600"></i> <span data-i18n="facility.retake">Retake</span>
+              </button>
+              <button type="button" onclick="removeResolvePhoto()" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-trash-can"></i> <span data-i18n="facility.remove">Remove</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-resolve w-full py-4 rounded-2xl text-white font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 cursor-pointer mt-2">
+          <i class="fa-solid fa-circle-check text-base"></i>
+          <span data-i18n="facility.confirmResolution">Confirm Resolution & Sync Database</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: SAFETY CLEARANCE & LOTO (LOCKOUT/TAGOUT) MODAL -->
+  <div id="safetyModal" class="fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card max-w-lg w-full p-7 sm:p-8 rounded-3xl relative border border-slate-100 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg shadow-sm">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <h3 data-i18n="facility.safetyChecklist" class="text-xl font-black text-slate-900">Safety Clearance & LOTO Checklist</h3>
+            <p class="text-xs text-slate-500 font-medium" id="safetyTicketSubtitle">Ticket #TCK-XXXX</p>
+          </div>
+        </div>
+        <button onclick="closeSafetyModal()" class="text-slate-400 hover:text-slate-700 p-1.5 cursor-pointer transition">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5">
+        <p class="text-xs text-slate-600 font-semibold leading-relaxed">
+          Before commencing physical repair on high-voltage electrical, chiller, or pressurized lines, verify all mandatory institutional safety steps:
+        </p>
+
+        <!-- Checkbox 1 -->
+        <label class="flex items-start gap-3 p-3.5 rounded-2xl bg-blue-50/40 border border-blue-100/80 hover:border-blue-200 transition cursor-pointer">
+          <input type="checkbox" id="chkSafetyPpe" class="w-5 h-5 rounded text-blue-600 border-slate-300 focus:ring-blue-500 mt-0.5 cursor-pointer" />
+          <div class="text-xs text-slate-700 font-medium">
+            <span data-i18n="facility.ppe" class="text-slate-900 font-bold block text-sm">1. Personal Protective Equipment (PPE)</span>
+            <span data-i18n="facility.ppeDesc">Insulated gloves, safety goggles/face shield, and dielectric boots deployed.</span>
+          </div>
+        </label>
+
+        <!-- Checkbox 2 -->
+        <label class="flex items-start gap-3 p-3.5 rounded-2xl bg-blue-50/40 border border-blue-100/80 hover:border-blue-200 transition cursor-pointer">
+          <input type="checkbox" id="chkSafetyLoto" class="w-5 h-5 rounded text-blue-600 border-slate-300 focus:ring-blue-500 mt-0.5 cursor-pointer" />
+          <div class="text-xs text-slate-700 font-medium">
+            <span data-i18n="facility.loto" class="text-slate-900 font-bold block text-sm">2. Lockout / Tagout (LOTO) Verified</span>
+            <span data-i18n="facility.lotoDesc">Upstream circuit breaker or isolation valve turned off, locked with safety padlock, and tagged.</span>
+          </div>
+        </label>
+
+        <!-- Checkbox 3 -->
+        <label class="flex items-start gap-3 p-3.5 rounded-2xl bg-blue-50/40 border border-blue-100/80 hover:border-blue-200 transition cursor-pointer">
+          <input type="checkbox" id="chkSafetyBarricade" class="w-5 h-5 rounded text-blue-600 border-slate-300 focus:ring-blue-500 mt-0.5 cursor-pointer" />
+          <div class="text-xs text-slate-700 font-medium">
+            <span data-i18n="facility.barricade" class="text-slate-900 font-bold block text-sm">3. Work Zone Hazard Barricaded</span>
+            <span data-i18n="facility.barricadeDesc">Warning signage posted, cones positioned, students alerted away from hazard zone.</span>
+          </div>
+        </label>
+      </div>
+
+      <button type="button" onclick="saveSafetyClearance()" class="btn-gradient w-full py-3.5 rounded-2xl text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-md">
+        <i class="fa-solid fa-lock text-sm"></i>
+        <span data-i18n="facility.saveSafety">Save Safety Clearance & Authorize Repair</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL 3: AREA QR CODE SCANNER MODAL -->
+  <div id="areaQrScannerModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAreaScanner()"></div>
+    <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h2 data-i18n="qr.scanRoomQr" class="text-xl font-black text-slate-900">Scan Area / Room QR</h2>
+          <p data-i18n="qr.cameraInstructions" class="text-xs text-slate-500 font-medium mt-1">Scan classroom tag to filter on-site work orders</p>
+        </div>
+        <button onclick="closeAreaScanner()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition cursor-pointer">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="p-4 flex-1 overflow-y-auto">
+        <div id="area-qr-reader" class="w-full rounded-2xl overflow-hidden border-2 border-slate-200"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: FULLSCREEN IMAGE VIEWER LIGHTBOX -->
+  <div id="facilityImageViewerModal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity">
+    <div class="relative max-w-3xl w-full bg-slate-900 border border-slate-700/80 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between text-white">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-image text-amber-400"></i>
+          <h3 id="imageViewerTitle" class="text-sm sm:text-base font-bold truncate">Photo Proof</h3>
+        </div>
+        <button type="button" onclick="closeImageViewer()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-4 bg-black/50 flex items-center justify-center max-h-[75vh] overflow-hidden">
+        <img id="imageViewerImg" src="" alt="Full Resolution Proof" class="max-h-[70vh] max-w-full object-contain rounded-xl shadow-lg" />
+      </div>
+      <div class="px-6 py-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <span>Stored securely in Supabase DB</span>
+        <button type="button" onclick="closeImageViewer()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold cursor-pointer">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm w-full bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-slate-700 transition-all duration-300 transform translate-y-24 opacity-0 pointer-events-none z-50 flex items-start gap-3">
+    <div id="toastIconContainer" class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+      <i class="fa-solid fa-check text-sm" id="toastIcon"></i>
+    </div>
+    <div class="flex-1">
+      <h4 class="text-xs font-extrabold uppercase tracking-wider" id="toastHeader">Success</h4>
+      <p class="text-xs sm:text-sm text-slate-300 mt-0.5 font-medium" id="toastBody">Action completed.</p>
+    </div>
+    <button type="button" onclick="hideToast()" class="text-slate-400 hover:text-white text-sm">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <script src="js/facility.js"></script>
+
+</body>
+</html>

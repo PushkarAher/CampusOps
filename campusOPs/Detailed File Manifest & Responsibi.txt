@@ -1,0 +1,20 @@
+Detailed File Manifest & Responsibilities
+client/ (Frontend UI Files):
+
+Contains your fully styled HTML templates (admin.html, facility.html, login.html, qr-resolver.html, student.html, teacher.html, ticket.html). They will use the Supabase client SDK (@supabase/supabase-js) in script tags to handle client-side sign-ins, real-time ticket updates, and upvote increments.
+
+server/config/supabaseClient.js:
+
+Establishes the secure server-side connection to your Supabase project using environment keys, allowing backend controllers to execute privileged database reads/writes.
+
+server/controllers/:
+
+Houses the core business logic. ticketController.js runs PostgreSQL queries via Supabase to fetch active tickets, sort by student upvotes, and update technician verification statuses instantly.
+
+middleware/rbac.js:
+
+Intercepts API requests to verify Supabase JWT session tokens and ensure strict role separation (e.g., preventing students from triggering admin vendor approvals).
+
+middleware/blockchain-bridge.js:
+
+The hybrid connector. When an estate admin approves a high-value purchase order on admin.html, this bridge interacts with VendorEscrow.sol on the blockchain to lock/release funds securely.
