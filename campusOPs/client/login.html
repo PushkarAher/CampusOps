@@ -240,16 +240,16 @@
 
     </div>
 
-    <!-- API CONNECTION STATUS & CONFIGURATION -->
+    <!-- API CONNECTION STATUS — Read-only, URL is pinned in js/config.js -->
     <footer class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 px-2">
       <div class="flex items-center gap-2">
         <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span id="activeApiDisplay">API Endpoint: <code class="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px]">Detecting...</code></span>
       </div>
       <div class="flex items-center gap-3">
-        <button type="button" onclick="promptChangeApiUrl()" class="text-blue-600 hover:text-blue-800 font-bold hover:underline flex items-center gap-1 cursor-pointer">
-          <i class="fa-solid fa-gear text-xs"></i> Set Render API URL
-        </button>
+        <span class="text-slate-400 font-medium flex items-center gap-1">
+          <i class="fa-solid fa-lock text-xs text-emerald-500"></i> Backend auto-connected
+        </span>
         <span>•</span>
         <a href="Qr-resolver.html" class="hover:text-blue-600 font-semibold flex items-center gap-1">
           <i class="fa-solid fa-qrcode text-xs"></i> QR Resolver
@@ -457,7 +457,7 @@
                 <span class="font-extrabold text-indigo-700">${_t('login.demoStudent', 'Demo Student:')}</span> rohit.2024@campus.edu
               </div>
               <button type="button" onclick="fillStudentDemo()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
-                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+                ⚡ Demo Login →
               </button>
             </div>
           `;
@@ -515,7 +515,7 @@
                 <span class="font-extrabold text-purple-700">${_t('login.demoFaculty', 'Demo Faculty:')}</span> prof.sharma@campus.edu
               </div>
               <button type="button" onclick="fillTeacherDemo()" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
-                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+                ⚡ Demo Login →
               </button>
             </div>
           `;
@@ -581,7 +581,7 @@
                 <span class="font-extrabold text-amber-700">${_t('login.demoWorker', 'Demo Electrician:')}</span> electrician.ramesh@campus.edu
               </div>
               <button type="button" onclick="fillWorkerDemo()" class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
-                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+                ⚡ Demo Login →
               </button>
             </div>
           `;
@@ -632,7 +632,7 @@
                 <span class="font-extrabold text-slate-700">${_t('login.demoAdmin', 'Demo Admin:')}</span> estate.office@campus.edu
               </div>
               <button type="button" onclick="fillAdminDemo()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition cursor-pointer flex-shrink-0 shadow-xs">
-                ${_t('login.autoFillDemo', '⚡ Auto-Fill Demo')}
+                ⚡ Demo Login →
               </button>
             </div>
           `;
@@ -970,40 +970,89 @@
       toast.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
     }
 
-    function fillStudentDemo() {
+    // ─── DEMO INSTANT-LOGIN HELPERS ────────────────────────────────────────────
+    // These functions bypass the backend entirely for demo/presentation mode.
+    // They store a fake session token + role in localStorage and redirect
+    // directly to the appropriate role page — no API call required.
+
+    function _demoInstantLogin(email, password, role, redirectUrl, displayName) {
       const _t = (k, f) => (window.t ? window.t(k, f) : f);
+
+      // Fill visible form fields so UI looks correct
       const ident = document.querySelector('input[name="identifier"]');
-      const pass = document.querySelector('input[name="password"]');
-      if (ident) ident.value = 'rohit.2024@campus.edu';
-      if (pass) pass.value = 'Student@123';
-      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoStudentLoaded', 'Sample student credentials loaded.'), 'success');
+      const pass  = document.querySelector('input[name="password"]');
+      if (ident) ident.value = email;
+      if (pass)  pass.value  = password;
+
+      // Store a synthetic demo session (no real token needed for frontend-only demo)
+      localStorage.setItem('token', 'demo-session-token-' + role + '-' + Date.now());
+      localStorage.setItem('role', role);
+      localStorage.setItem('campusops_demo_user', JSON.stringify({
+        email,
+        name: displayName,
+        role,
+        isDemo: true
+      }));
+
+      // Show success toast
+      triggerToast(
+        '🎓 Demo Access Granted',
+        `Logged in as ${displayName}. Redirecting to ${role} portal...`,
+        'success'
+      );
+
+      // Disable the submit button to prevent double submission
+      const btn = document.getElementById('submitActionBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'not-allowed';
+      }
+
+      // Redirect after toast
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 1200);
+    }
+
+    function fillStudentDemo() {
+      _demoInstantLogin(
+        'rohit.2024@campus.edu',
+        'Student@123',
+        'Student',
+        'student.html',
+        'Rohit Kumar (Demo Student)'
+      );
     }
 
     function fillTeacherDemo() {
-      const _t = (k, f) => (window.t ? window.t(k, f) : f);
-      const ident = document.querySelector('input[name="identifier"]');
-      const pass = document.querySelector('input[name="password"]');
-      if (ident) ident.value = 'prof.sharma@campus.edu';
-      if (pass) pass.value = 'Teacher@123';
-      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoTeacherLoaded', 'Sample teacher credentials loaded.'), 'success');
+      _demoInstantLogin(
+        'prof.sharma@campus.edu',
+        'Teacher@123',
+        'Teacher',
+        'teacher.html',
+        'Prof. Sharma (Demo Faculty)'
+      );
     }
 
     function fillWorkerDemo() {
-      const _t = (k, f) => (window.t ? window.t(k, f) : f);
-      const ident = document.querySelector('input[name="identifier"]');
-      const pass = document.querySelector('input[name="password"]');
-      if (ident) ident.value = 'electrician.ramesh@campus.edu';
-      if (pass) pass.value = 'Worker@123';
-      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoWorkerLoaded', 'Sample worker credentials loaded.'), 'success');
+      _demoInstantLogin(
+        'electrician.ramesh@campus.edu',
+        'Worker@123',
+        'Worker',
+        'facility.html',
+        'Ramesh (Demo Electrician)'
+      );
     }
 
     function fillAdminDemo() {
-      const _t = (k, f) => (window.t ? window.t(k, f) : f);
-      const ident = document.querySelector('input[name="identifier"]');
-      const pass = document.querySelector('input[name="password"]');
-      if (ident) ident.value = 'estate.office@campus.edu';
-      if (pass) pass.value = 'password123';
-      triggerToast(_t('login.demoFilled', 'Demo Filled'), _t('login.demoAdminLoaded', 'Sample admin credentials loaded.'), 'success');
+      _demoInstantLogin(
+        'estate.office@campus.edu',
+        'Admin@123',
+        'Admin',
+        'admin.html',
+        'Estate Officer (Demo Admin)'
+      );
     }
 
     function fillStudentRegisterDemo() {
